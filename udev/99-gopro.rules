@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Joel Winarske
+# GoPro (VID 2672) — allow unprivileged read of the USB device node.
+#
+# Without this, libusb_open() fails with LIBUSB_ERROR_ACCESS and discovery
+# falls back to reading the serial from sysfs (which is world-readable). The
+# fallback works, so this rule is a convenience, not a requirement — but the
+# descriptor read is the portable path and the one the FFI bridge will use.
+#
+# Install:
+#   sudo cp 99-gopro.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+#
+# uaccess grants the device to the locally logged-in user via logind, which is
+# preferable to a blanket MODE="0666".
+SUBSYSTEM=="usb", ATTR{idVendor}=="2672", TAG+="uaccess"
+
+# Stable name for the camera's network interface. The kernel's default
+# predictable name (enp0s20u3…) changes with the physical port, which makes
+# routing rules fragile. This pins it regardless of where it is plugged in.
+SUBSYSTEM=="net", ACTION=="add", ATTRS{idVendor}=="2672", NAME="gopro0"
