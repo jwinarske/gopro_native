@@ -1,0 +1,24 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 Joel Winarske */
+/* Linker version script — the exported-C-only allowlist.
+ *
+ * -fvisibility=hidden hides our own definitions, but weak vague-linkage
+ * template instantiations pulled in from libstdc++ headers (std::format,
+ * std::filesystem) still land in .dynsym with default visibility. They are
+ * harmless but they are not ABI, and leaving them exported invites someone
+ * to bind to one.
+ *
+ * This restricts the dynamic symbol table to the bridge entry points plus the
+ * Dart API DL trampolines that dart_api_dl.c must expose.
+ */
+{
+  global:
+    gopro_bridge_init;
+    gopro_discovery_create;
+    gopro_discovery_destroy;
+    gopro_discovery_rescan;
+    gopro_discovery_set_timeout;
+    Dart_*;
+  local:
+    *;
+};

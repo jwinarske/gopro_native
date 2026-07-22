@@ -1,0 +1,30 @@
+name: gopro_native
+description: >-
+  Linux-first GoPro camera discovery over USB via libusb, with zero-copy FFI
+  event delivery. Enumerate-only: never claims the CDC-NCM interface.
+  Readiness-gated so a camera is reported only once it actually answers.
+version: 0.1.0
+publish_to: none
+
+homepage: https://github.com/jwinarske/gopro_native
+
+environment:
+  sdk: ^3.10.0
+
+platforms:
+  linux:
+
+dependencies:
+  code_assets: ^1.0.0
+  ffi: ^2.1.0
+  hooks: ^1.0.2
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.24.0
+
+topics:
+  - gopro
+  - usb
+  - linux
+  - ffi

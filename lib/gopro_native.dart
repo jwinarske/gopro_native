@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Joel Winarske
+/// Linux-first GoPro camera discovery over USB via libusb.
+///
+/// Discovery is enumerate-only: the camera's CDC-NCM interface is never
+/// claimed, because claiming would detach `cdc_ncm` and destroy the very
+/// network transport the control API rides on.
+library gopro_native;
+
+export 'src/discovery.dart' show GoProDiscovery;
+export 'src/ffi/types.dart' show GoProCamera, Readiness, SerialSource;
+
+// Generated from the Open GoPro Python SDK — see tool/gen_constants.py.
+export 'src/generated/constants.dart';
+export 'src/generated/settings.dart';
+export 'src/generated/statuses.dart';

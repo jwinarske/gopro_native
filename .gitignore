@@ -1,0 +1,11 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+pubspec.lock
+
+# CMake / native build output
+build/
+compile_commands.json
+
+# clangd index
+.cache/
