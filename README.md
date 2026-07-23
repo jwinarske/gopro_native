@@ -263,11 +263,29 @@ camera.faults.listen(print);   // optional; why a command went unanswered
 explanation — "the camera is asleep" and "the LE link is not encrypted"
 require completely different responses.
 
-Two rules the transport has to observe:
+A link that drops afterwards is re-established automatically — the same
+`LinkMachine` handle climbs the ladder again, so backoff and attempt counts
+carry over rather than restarting from a fresh guess. `linkChanges` reports
+`up` / `reconnecting` / `down`, and `send()` throws while reconnecting rather
+than queueing against a camera that is not there. Registered status and
+setting subscriptions do **not** survive a camera-side disconnect; a return
+to `up` is the caller's cue to send them again, because nothing else will.
 
-- **Count the characteristics that are actually notifying.** Taking one
+Measured on a MAX2: drop noticed 2.7 s after `bluetoothctl disconnect`, back
+to `up` ~700 ms later, next query answered 15 ms after that.
+
+Three rules the transport has to observe, each of which cost a debugging
+session:
+
+- **Count what you subscribed, not what BlueZ says is notifying.** Taking one
   successful `StartNotify` as proof of all three reaches ready with two
   channels deaf, and every reply then goes missing with no error anywhere.
+- **`Notifying` survives a disconnect as stale `true`, and `StartNotify` on a
+  characteristic BlueZ already considers notifying is a no-op** — it returns
+  success without writing the CCCD. The camera cleared its side, so the
+  descriptor really does need writing. On reconnect the writes went out and
+  were acknowledged, and not one reply came back. `StopNotify` first, then
+  `StartNotify`, to force a real descriptor write.
 - **Queries are not gated.** The ready gate comes from the busy and encoding
   statuses, both of which start unknown, so gating queries leaves the only
   thing that can open the gate waiting behind it. `send()` therefore defaults
@@ -283,7 +301,8 @@ event delivery into Dart, and an HTTP round-trip to the camera.
 The BLE control plane is validated against the same camera: bring-up through
 to ready, subscription to all three notify characteristics, fragmentation and
 reassembly at the negotiated 517-byte MTU, correlation and response routing,
-the ready gate deriving from a status query, and teardown.
+the ready gate deriving from a status query, teardown, and recovery from a
+forced disconnect across repeated cycles.
 
 Generated constants cover 477 settings, 175 statuses and 100 protocol
 constants (`tool/gen_constants.py`).
