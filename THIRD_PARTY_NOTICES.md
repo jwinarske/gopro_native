@@ -91,6 +91,93 @@ Copyright (c) 2021-2024 GoPro, Inc.
 
 ---
 
+## Open GoPro — HTTP message definitions
+
+Redistributed verbatim:
+
+```
+tool/upstream/http_commands.py
+```
+
+Derived from it by `tool/gen_http_commands.py`:
+
+```
+lib/src/generated/http_commands.dart
+```
+
+From the same Open GoPro Python SDK, under the same MIT grant recorded in
+`tool/upstream/LICENSE.gopro`. The generated file reproduces the copyright
+notice in its header.
+
+SPDX-License-Identifier: MIT
+Copyright (c) 2021-2024 GoPro, Inc.
+
+---
+
+## Open GoPro — protobuf definitions
+
+Redistributed verbatim:
+
+```
+tool/upstream/proto/camera_control.proto
+tool/upstream/proto/cohn.proto
+tool/upstream/proto/live_streaming.proto
+tool/upstream/proto/media.proto
+tool/upstream/proto/network_management.proto
+tool/upstream/proto/preset_status.proto
+tool/upstream/proto/request_get_camera_capabilities.proto
+tool/upstream/proto/request_get_preset_status.proto
+tool/upstream/proto/response_generic.proto
+tool/upstream/proto/set_camera_control_status.proto
+tool/upstream/proto/turbo_transfer.proto
+```
+
+Derived from them by `tool/gen_proto.py`:
+
+```
+lib/src/generated/proto/*.dart      (33 files)
+lib/proto/*.dart                    (6 feature libraries)
+```
+
+### Provenance
+
+The `.proto` sources are taken from the `protobuf/` directory of the Open
+GoPro repository, which is the canonical form. That directory carries no
+LICENSE file of its own, so the grant was established by checking the
+definitions against a distribution that does carry one.
+
+All 11 files are byte-equivalent in structure to the descriptors GoPro ships
+in `demos/python/sdk_wireless_camera_control/`, whose MIT LICENSE is vendored
+here as `tool/upstream/LICENSE.gopro` and is the same grant covering the
+camera constants above. The comparison was mechanical — every message, field
+number, field type, label, enum and enum value, 459 declarations in total —
+and each of the 11 matched exactly.
+
+The same definitions also appear as `.proto` sources under
+`demos/kotlin/kmp_sdk/protobuf/`, which does carry its own MIT LICENSE, but
+that copy is an older snapshot: `preset_status.proto` alone differs by 42
+lines. The canonical files were preferred over the more conveniently licensed
+stale ones, and the grant established by the check above.
+
+The generated Dart files are a derivative work: the message names, field
+numbers and enum values are GoPro's. They reproduce the copyright notice in
+their headers, as MIT requires.
+
+SPDX-License-Identifier: MIT
+Copyright (c) 2021-2024 GoPro, Inc.
+
+---
+
+## protobuf (Dart runtime)
+
+`package:protobuf`, a runtime dependency of the generated code. Published by
+the Dart protobuf authors under the BSD 3-Clause license. Not redistributed
+here; resolved by `dart pub get` and carrying its own notice in the pub cache.
+
+SPDX-License-Identifier: BSD-3-Clause
+
+---
+
 ## Trademarks
 
 GoPro, HERO, and MAX are trademarks of GoPro, Inc. This project is not
