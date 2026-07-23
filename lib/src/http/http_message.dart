@@ -93,17 +93,33 @@ class HttpMessage {
       segments.addAll(v.toString().split('/').where((s) => s.isNotEmpty));
     }
 
-    final query = <String, String>{};
+    final query = <String>[];
     for (final a in arguments) {
       final v = values[a];
-      if (v != null) query[a] = v.toString();
+      if (v != null) query.add('${_encodeQuery(a)}=${_encodeQuery(v)}');
     }
 
     return base.replace(
       pathSegments: segments,
-      queryParameters: query.isEmpty ? null : query,
+      query: query.isEmpty ? null : query.join('&'),
     );
   }
+
+  /// Percent-encodes a query argument, leaving `/` alone.
+  ///
+  /// Media paths are query arguments — `path=100GOPRO/GX010087.MP4` — and the
+  /// camera will not accept the slash escaped. MEASURED on a HERO13 Black,
+  /// firmware H24.01.02.10.00:
+  ///
+  ///     path=100GOPRO%2FGX010087.MP4   400 Bad Request, empty body
+  ///     path=100GOPRO/GX010087.MP4     200
+  ///
+  /// RFC 3986 permits `/` in a query component; `Uri.queryParameters` escapes
+  /// it anyway, which is why this cannot go through the normal path. Spaces
+  /// become `%20` rather than `+`, since the camera parses the raw string
+  /// rather than a form body.
+  static String _encodeQuery(Object value) =>
+      Uri.encodeComponent(value.toString()).replaceAll('%2F', '/');
 
   /// Builds the JSON body of a PUT, omitting anything not supplied.
   Map<String, Object?> body([Map<String, Object?> values = const {}]) => {

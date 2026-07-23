@@ -46,7 +46,30 @@ void main() {
       // be accepted by the camera and ignored.
       expect(
         m('delete_group').url(base, {'p': '100GOPRO/GX010001.MP4'}).query,
-        'p=100GOPRO%2FGX010001.MP4',
+        'p=100GOPRO/GX010001.MP4',
+      );
+    });
+
+    test('a slash in a query argument is not escaped', () {
+      // MEASURED on a HERO13 Black: path=100GOPRO%2FGX010087.MP4 is answered
+      // with 400 and an empty body, and the literal slash with 200. Every
+      // media command passes a path this way, so escaping it breaks all of
+      // them at once and says nothing about why.
+      final uri = m(
+        'get_media_metadata',
+      ).url(base, {'path': '100GOPRO/GX010087.MP4'});
+      expect(uri.query, 'path=100GOPRO/GX010087.MP4');
+      expect(uri.toString(), endsWith('?path=100GOPRO/GX010087.MP4'));
+    });
+
+    test('everything else in a query argument is still escaped', () {
+      final uri = m('set_camera_name').url(base, {});
+      expect(uri.hasQuery, isFalse);
+      // Spaces as %20 rather than +: the camera parses the raw query string,
+      // not a form body.
+      expect(
+        m('get_media_metadata').url(base, {'path': 'a b&c=d'}).query,
+        'path=a%20b%26c%3Dd',
       );
     });
 
@@ -88,7 +111,7 @@ void main() {
       final uri = m(
         'add_file_hilight',
       ).url(base, {'path': '100GOPRO/GOPR0001.JPG', 'ms': null});
-      expect(uri.query, 'path=100GOPRO%2FGOPR0001.JPG');
+      expect(uri.query, 'path=100GOPRO/GOPR0001.JPG');
       expect(uri.query, isNot(contains('ms')));
     });
 
