@@ -365,6 +365,9 @@ class GoProBleCamera {
       final a = await _transport._bringUp(
         link: _link,
         timeout: _reconnectTimeout,
+        // Reconnect to the same camera. Without this a host with two paired
+        // cameras can silently reconnect to the other one.
+        address: _device.address,
       );
       await _attach(a);
       _setState(CameraLink.up);
@@ -436,9 +439,16 @@ class GoProBleTransport {
   /// Requires both a random address type and the Control and Query service.
   /// A camera also presents a BR-EDR object with the same name, and that one
   /// can never carry GATT.
-  BlueZDevice? _candidate() {
+  ///
+  /// [address] restricts the match. Without it the first camera found wins,
+  /// which is arbitrary once more than one is paired to the host — and which
+  /// one is arbitrary can change between runs.
+  BlueZDevice? _candidate([String? address]) {
     for (final d in _client.devices) {
       if (d.addressType != 'random') continue;
+      if (address != null && d.address.toUpperCase() != address.toUpperCase()) {
+        continue;
+      }
       if (!d.uuids.any(
         (u) => u.toString().toLowerCase() == _controlQueryService,
       )) {
@@ -448,6 +458,20 @@ class GoProBleTransport {
     }
     return null;
   }
+
+  /// Every camera the host can currently see, by address.
+  ///
+  /// Useful for filling in [connect]'s `address` when more than one is
+  /// paired. Only reports what BlueZ already knows; a camera that is asleep
+  /// and not advertising will not appear until a scan finds it.
+  Map<String, String> get cameras => {
+    for (final d in _client.devices)
+      if (d.addressType == 'random' &&
+          d.uuids.any(
+            (u) => u.toString().toLowerCase() == _controlQueryService,
+          ))
+        d.address: d.alias,
+  };
 
   /// A BR-EDR object for the same camera. While such a link is up the camera
   /// stops advertising over LE, so it has to be disconnected rather than
@@ -470,11 +494,16 @@ class GoProBleTransport {
   /// carries the machine's explanation, because "connect failed" and "needs
   /// an LE bond" call for completely different responses.
   ///
+  /// [address] selects which camera when more than one is paired to the
+  /// host. Without it the first one found wins, and which one that is can
+  /// change between runs. [cameras] lists the candidates.
+  ///
   /// A link that drops afterwards is re-established automatically, within
   /// [reconnectTimeout] per attempt; the camera reports it on
   /// [GoProBleCamera.linkChanges]. Zero disables that, and a drop then closes
   /// the camera instead.
   Future<GoProBleCamera> connect({
+    String? address,
     Duration timeout = const Duration(seconds: 60),
     Duration keepAlive = Duration.zero,
     Duration reconnectTimeout = const Duration(minutes: 5),
@@ -484,7 +513,7 @@ class GoProBleTransport {
 
     final _Attached attached;
     try {
-      attached = await _bringUp(link: link, timeout: timeout);
+      attached = await _bringUp(link: link, timeout: timeout, address: address);
     } catch (_) {
       BleBindings.linkDestroy(link);
       rethrow;
@@ -523,6 +552,7 @@ class GoProBleTransport {
   Future<_Attached> _bringUp({
     required Pointer<Void> link,
     required Duration timeout,
+    String? address,
   }) async {
     final clock = Stopwatch()..start();
 
@@ -542,7 +572,7 @@ class GoProBleTransport {
     LinkAdvice? last;
 
     while (clock.elapsed < timeout) {
-      device = _candidate();
+      device = _candidate(address);
       final classic = _classicLink();
 
       final chars = device == null

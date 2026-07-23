@@ -9,6 +9,10 @@ library gopro_native;
 
 export 'src/ble_transport.dart'
     show CameraLink, GoProBleCamera, GoProBleException, GoProBleTransport;
+export 'src/cohn/cohn_client.dart' show CohnClient, CohnException;
+export 'src/cohn/cohn_http.dart' show CohnHttp, pinnedClient;
+export 'src/cohn/credentials.dart'
+    show CohnCredentials, CohnCredentialStore, FileCredentialStore;
 export 'src/discovery.dart' show GoProDiscovery;
 export 'src/ffi/ble_codec.dart'
     show
