@@ -1,0 +1,40 @@
+name: Publish to pub.dev
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write   # required for pub.dev OIDC publishing
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with: { sdk: stable }
+      # The build hook drives CMake for the native library. libusb is this
+      # package's own dependency; libsystemd is the bluez_native build hook's,
+      # which runs as part of `dart pub get`. Without them the resolve fails
+      # before publishing is ever attempted.
+      - name: Install deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build pkg-config libusb-1.0-0-dev libsystemd-dev
+      - run: dart pub get
+      - run: dart analyze --fatal-infos
+      - run: dart test
+      # Dry-run first — fails the job if any pub.dev requirement is unmet,
+      # so a broken release does not reach the upload step.
+      - run: dart pub publish --dry-run
+      # OIDC publish: no stored credentials. Requires automated publishing to
+      # be enabled for this package in the pub.dev admin console, and only
+      # after the first version has been uploaded by a human.
+      - run: dart pub publish --force
