@@ -36,6 +36,15 @@ Future<void> main(List<String> args) async {
     (p) => stdout.writeln('  push on ${p.channel.name}: ${_hex(p.message)}'),
   );
   camera.faults.listen((f) => stderr.writeln('  fault: $f'));
+  camera.linkChanges.listen((l) async {
+    stdout.writeln('  link ${l.name}');
+    // Registered subscriptions do not survive a camera-side disconnect.
+    // Nothing re-sends them, so a return to up is the cue to do it here.
+    if (l == CameraLink.up) {
+      final again = await camera.send(BleChannel.query, [0x53, 8, 10]);
+      stdout.writeln('  re-registered ${again.outcome.name}');
+    }
+  });
 
   // 8 is BUSY and 10 is ENCODING. Together they are the ready gate the
   // session applies to every queued command.

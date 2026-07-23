@@ -8,7 +8,7 @@
 library gopro_native;
 
 export 'src/ble_transport.dart'
-    show GoProBleCamera, GoProBleException, GoProBleTransport;
+    show CameraLink, GoProBleCamera, GoProBleException, GoProBleTransport;
 export 'src/discovery.dart' show GoProDiscovery;
 export 'src/ffi/ble_codec.dart'
     show

@@ -31,27 +31,60 @@ final Map<BleChannel, ({String write, String notify})> _characteristics = {
   BleChannel.query: (write: _gp('0076'), notify: _gp('0077')),
 };
 
+/// What bring-up produced: the device and its six control characteristics.
+typedef _Attached = ({
+  BlueZDevice device,
+  Map<BleChannel, BlueZGattCharacteristic> writes,
+  Map<BleChannel, BlueZGattCharacteristic> notifies,
+});
+
+/// Whether the camera can be talked to.
+///
+/// Separate from the bring-up ladder in [LinkState], which describes how far
+/// a single attempt has climbed. This is what a caller has to branch on.
+enum CameraLink {
+  /// Usable.
+  up,
+
+  /// The link dropped and bring-up is running again. [GoProBleCamera.send]
+  /// throws while in this state rather than queueing against a camera that
+  /// is not there.
+  reconnecting,
+
+  /// Given up. Either [GoProBleCamera.close] was called, or reconnection ran
+  /// out of time. Terminal.
+  down,
+}
+
 /// A camera reachable over BLE.
 class GoProBleCamera {
-  GoProBleCamera._(this._device, this._session, this._link);
+  GoProBleCamera._(this._transport, this._device, this._session, this._link);
 
-  final BlueZDevice _device;
+  final GoProBleTransport _transport;
+  BlueZDevice _device;
   final Pointer<Void> _session;
+
+  /// The bring-up state machine. Kept across reconnects rather than recreated
+  /// so its backoff is one accumulated judgement, not a fresh guess per
+  /// attempt.
   final Pointer<Void> _link;
 
   final _writes = <BleChannel, BlueZGattCharacteristic>{};
   final _notifies = <BleChannel, BlueZGattCharacteristic>{};
-  final _subs = <StreamSubscription<List<int>>>[];
+  final _subs = <StreamSubscription<void>>[];
+  final _watch = <StreamSubscription<void>>[];
 
   final _pushes = StreamController<BlePush>.broadcast();
   final _readyChanges = StreamController<bool>.broadcast();
   final _faults = StreamController<Object>.broadcast();
+  final _linkChanges = StreamController<CameraLink>.broadcast();
   final _pending = <int, Completer<BleResponse>>{};
 
   ReceivePort? _events;
   Timer? _ticker;
   Stopwatch? _clock;
-  bool _closed = false;
+  Duration _reconnectTimeout = Duration.zero;
+  CameraLink _state = CameraLink.up;
 
   /// Messages the camera sent that nobody was waiting for: registered status
   /// and setting updates.
@@ -70,7 +103,17 @@ class GoProBleCamera {
   /// why. Listening is optional; not listening drops them.
   Stream<Object> get faults => _faults.stream;
 
-  bool get ready => !_closed && BleBindings.ready(_session);
+  /// The connection coming and going.
+  ///
+  /// Worth listening to even when reconnection is automatic: registered
+  /// status and setting subscriptions do not survive a camera-side
+  /// disconnect, so a return to [CameraLink.up] is the caller's cue to send
+  /// them again. Nothing else re-sends them.
+  Stream<CameraLink> get linkChanges => _linkChanges.stream;
+
+  CameraLink get link => _state;
+
+  bool get ready => _state == CameraLink.up && BleBindings.ready(_session);
 
   String get address => _device.address;
 
@@ -78,11 +121,11 @@ class GoProBleCamera {
 
   /// Sends a payload and waits for the camera's reply.
   ///
-  /// Throws [StateError] if a command with the same correlation id is already
-  /// outstanding. Correlation is the channel plus the leading payload byte,
-  /// so two different commands on the same characteristic beginning with the
-  /// same byte cannot be in flight together: their replies would be
-  /// indistinguishable.
+  /// Throws [StateError] if the link is not [CameraLink.up], or if a command
+  /// with the same correlation id is already outstanding. Correlation is the
+  /// channel plus the leading payload byte, so two different commands on the
+  /// same characteristic beginning with the same byte cannot be in flight
+  /// together: their replies would be indistinguishable.
   ///
   /// [priority] defaults to [BlePriority.fastpass] on [BleChannel.query] and
   /// [BlePriority.queued] elsewhere. The ready gate is derived from the busy
@@ -95,7 +138,9 @@ class GoProBleCamera {
     List<int> payload, {
     BlePriority? priority,
   }) {
-    if (_closed) throw StateError('camera is closed');
+    if (_state != CameraLink.up) {
+      throw StateError('camera link is ${_state.name}');
+    }
     if (payload.isEmpty) throw ArgumentError('payload is empty');
 
     priority ??= channel == BleChannel.query
@@ -125,37 +170,26 @@ class GoProBleCamera {
       send(BleChannel.query, [0x13, ...statusIds]);
 
   Future<void> close() async {
-    if (_closed) return;
-    _closed = true;
+    if (_state == CameraLink.down) return;
+    _setState(CameraLink.down);
 
     _ticker?.cancel();
+    for (final w in _watch) {
+      await w.cancel();
+    }
+    _watch.clear();
+
     // Cancels outstanding commands, so every pending future resolves rather
     // than hanging on a reply that can no longer arrive.
     BleBindings.disconnect(_session);
-
-    for (final s in _subs) {
-      await s.cancel();
-    }
-    _subs.clear();
-    for (final c in _notifies.values) {
-      try {
-        await c.stopNotify();
-      } on BlueZException {
-        // The link may already be gone; nothing left to unsubscribe from.
-      }
-    }
+    await _detach(stopNotify: true);
 
     // The cancellations above were posted to the port, not delivered. Give
     // the event loop a turn to drain them before the handle goes away, then
     // resolve whatever is still outstanding: a caller awaiting send() must
     // never be left holding a future that can no longer complete.
     await Future<void>.delayed(Duration.zero);
-    for (final entry in _pending.entries) {
-      entry.value.complete(
-        BleResponse(entry.key, BleOutcome.canceled, Uint8List(0)),
-      );
-    }
-    _pending.clear();
+    _resolvePending();
 
     BleBindings.destroy(_session);
     BleBindings.linkDestroy(_link);
@@ -163,6 +197,128 @@ class GoProBleCamera {
     await _pushes.close();
     await _readyChanges.close();
     await _faults.close();
+    await _linkChanges.close();
+  }
+
+  void _setState(CameraLink next) {
+    if (_state == next) return;
+    _state = next;
+    if (!_linkChanges.isClosed) _linkChanges.add(next);
+  }
+
+  /// Completes anything the native side did not, so no caller is left holding
+  /// a future that can never resolve.
+  void _resolvePending() {
+    for (final entry in _pending.entries) {
+      entry.value.complete(
+        BleResponse(entry.key, BleOutcome.canceled, Uint8List(0)),
+      );
+    }
+    _pending.clear();
+  }
+
+  /// Binds to a freshly brought-up link.
+  Future<void> _attach(_Attached a) async {
+    _device = a.device;
+    _writes
+      ..clear()
+      ..addAll(a.writes);
+    _notifies
+      ..clear()
+      ..addAll(a.notifies);
+
+    // The negotiated MTU less three bytes of ATT overhead. A MAX2 reports
+    // 517, which is 25 times the floor the default assumes. Re-read on every
+    // attach: a reconnect renegotiates, and carrying the old value forward
+    // would fragment against an MTU that no longer exists.
+    final mtu = _notifies.values
+        .map((c) => c.mtu)
+        .fold<int>(0, (a, b) => a == 0 || b < a ? b : a);
+    if (mtu > 3) BleBindings.setAttPayload(_session, mtu - 3);
+
+    for (final entry in _notifies.entries) {
+      _subs.add(
+        entry.value.value.listen((bytes) {
+          BleBindings.feed(_session, entry.key, bytes, _now);
+        }),
+      );
+    }
+
+    // Three ways to notice the link going away, because none of them is
+    // sufficient alone. The property change is the fast path; the device
+    // being removed from D-Bus closes that stream without a final event; and
+    // the poll catches whatever both miss. Missing a drop is expensive --
+    // every subsequent command times out with nothing saying why.
+    _watch.add(
+      a.device.propertiesChanged.listen((changed) {
+        if (changed.contains('Connected') && !a.device.connected) {
+          unawaited(_onDrop('BlueZ reported the device disconnected'));
+        }
+      }),
+    );
+    _watch.add(
+      _transport._client.deviceRemoved.listen((d) {
+        if (d.objectPath == a.device.objectPath) {
+          unawaited(_onDrop('the device object was removed from BlueZ'));
+        }
+      }),
+    );
+  }
+
+  /// Releases everything tied to the current link, keeping the session and
+  /// the caller's streams alive.
+  Future<void> _detach({required bool stopNotify}) async {
+    for (final s in _subs) {
+      await s.cancel();
+    }
+    _subs.clear();
+
+    if (stopNotify) {
+      for (final c in _notifies.values) {
+        try {
+          await c.stopNotify();
+        } on BlueZException {
+          // The link may already be gone; nothing left to unsubscribe from.
+        }
+      }
+    }
+    _writes.clear();
+    _notifies.clear();
+  }
+
+  Future<void> _onDrop(String why) async {
+    if (_state != CameraLink.up) return;
+
+    if (_reconnectTimeout == Duration.zero) {
+      _faults.add(StateError('link lost: $why'));
+      await close();
+      return;
+    }
+
+    _setState(CameraLink.reconnecting);
+    _faults.add(StateError('link lost: $why; reconnecting'));
+
+    // Resets the reassemblers and the ready gate as well as cancelling
+    // in-flight work. Partial messages from before the drop must not be
+    // reassembled against whatever arrives after it.
+    BleBindings.disconnect(_session);
+
+    // StopNotify would go to a device that is gone, and BlueZ tears the
+    // session down on disconnect anyway.
+    await _detach(stopNotify: false);
+    _resolvePending();
+
+    try {
+      final a = await _transport._bringUp(
+        link: _link,
+        timeout: _reconnectTimeout,
+      );
+      await _attach(a);
+      _setState(CameraLink.up);
+    } on Object catch (e) {
+      _faults.add(e);
+      await close();
+    }
   }
 
   void _onEvent(dynamic message) {
@@ -260,93 +416,137 @@ class GoProBleTransport {
   /// On failure the [GoProBleException] names the stage that stalled and
   /// carries the machine's explanation, because "connect failed" and "needs
   /// an LE bond" call for completely different responses.
+  ///
+  /// A link that drops afterwards is re-established automatically, within
+  /// [reconnectTimeout] per attempt; the camera reports it on
+  /// [GoProBleCamera.linkChanges]. Zero disables that, and a drop then closes
+  /// the camera instead.
   Future<GoProBleCamera> connect({
     Duration timeout = const Duration(seconds: 60),
     Duration keepAlive = Duration.zero,
+    Duration reconnectTimeout = const Duration(minutes: 5),
   }) async {
     final link = BleBindings.linkCreate();
+    final clock = Stopwatch()..start();
+
+    final _Attached attached;
+    try {
+      attached = await _bringUp(link: link, timeout: timeout);
+    } catch (_) {
+      BleBindings.linkDestroy(link);
+      rethrow;
+    }
+
+    final events = ReceivePort();
+    final session = BleBindings.create(
+      events.sendPort.nativePort,
+      keepAlive: keepAlive,
+    );
+
+    final camera = GoProBleCamera._(this, attached.device, session, link)
+      .._events = events
+      .._clock = clock
+      .._reconnectTimeout = reconnectTimeout;
+    events.listen(camera._onEvent);
+    await camera._attach(attached);
+
+    // Dart drives the clock. A native timer would gain nothing: every write
+    // has to be performed from this isolate anyway. The same tick doubles as
+    // the backstop that notices a link D-Bus did not tell us about.
+    camera._ticker = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      BleBindings.tick(session, camera._now);
+      if (camera._state == CameraLink.up && !camera._device.connected) {
+        unawaited(camera._onDrop('the device is no longer connected'));
+      }
+    });
+
+    return camera;
+  }
+
+  /// One climb up the ladder, from wherever the camera currently is.
+  ///
+  /// Used for the first connection and for every reconnect after it, with the
+  /// same [link] handle both times so backoff and attempt counts carry over.
+  Future<_Attached> _bringUp({
+    required Pointer<Void> link,
+    required Duration timeout,
+  }) async {
     final clock = Stopwatch()..start();
 
     BlueZDevice? device;
     final writes = <BleChannel, BlueZGattCharacteristic>{};
     final notifies = <BleChannel, BlueZGattCharacteristic>{};
-    var notifySucceeded = false;
+
+    // Channels this climb has successfully subscribed, tracked here rather
+    // than read back from BlueZ's Notifying property.
+    //
+    // That property survives a disconnect as stale true. Believing it makes
+    // a reconnect skip StartNotify on channels that are no longer listening,
+    // and the camera's replies then go nowhere -- the write succeeds, no
+    // error is raised, and the command times out as though the camera had
+    // ignored it. Count what this climb actually did.
+    final subscribed = <BleChannel>{};
     LinkAdvice? last;
 
-    try {
-      while (clock.elapsed < timeout) {
-        device = _candidate();
-        final classic = _classicLink();
+    while (clock.elapsed < timeout) {
+      device = _candidate();
+      final classic = _classicLink();
 
-        final chars = device == null
-            ? const <BlueZGattCharacteristic>[]
-            : device.gattCharacteristics.toList();
-        // Re-scan until all six are found, not just until the first one is.
-        // The objects appear on D-Bus a few at a time, so a scan that catches
-        // a partial set has to be repeated or the rest are never picked up.
-        if (device != null &&
-            device.connected &&
-            !_complete(writes, notifies)) {
-          _locate(chars, writes, notifies);
-        }
-
-        final advice = BleBindings.linkUpdate(
-          link,
-          LinkObservation(
-            candidatePresent: device != null,
-            classicLinkUp: classic != null,
-            connected: device?.connected ?? false,
-            bondedFlag: device?.paired ?? false,
-            // Count what is exposed. BlueZ has been observed reporting
-            // ServicesResolved true while exposing nothing.
-            attributeCount: chars.length,
-            controlCharsFound: _complete(writes, notifies),
-            notifySucceeded: notifySucceeded,
-            // Count the characteristics actually notifying. Taking one
-            // successful StartNotify as proof of all three would reach ready
-            // with two channels deaf, and the camera's replies would simply
-            // never arrive.
-            subscribedCount: notifies.values.where((c) => c.notifying).length,
-            requiredSubscriptions: _characteristics.length,
-          ),
-          clock.elapsedMilliseconds,
-        );
-        if (advice == null) {
-          throw GoProBleException(
-            LinkState.absent,
-            StallReason.none,
-            'native and Dart link enums have drifted',
-          );
-        }
-        last = advice;
-
-        if (advice.state.isReady) {
-          return await _finish(
-            device!,
-            notifies,
-            writes,
-            link,
-            clock,
-            keepAlive,
-          );
-        }
-
-        await _act(advice, device, classic, link, notifies, clock, (v) {
-          notifySucceeded = v;
-        });
+      final chars = device == null
+          ? const <BlueZGattCharacteristic>[]
+          : device.gattCharacteristics.toList();
+      // Re-scan until all six are found, not just until the first one is.
+      // The objects appear on D-Bus a few at a time, so a scan that catches
+      // a partial set has to be repeated or the rest are never picked up.
+      if (device != null && device.connected && !_complete(writes, notifies)) {
+        _locate(chars, writes, notifies);
       }
 
-      throw GoProBleException(
-        last?.state ?? LinkState.absent,
-        last?.stall ?? StallReason.noAdvertisement,
-        last?.detail.isNotEmpty == true
-            ? last!.detail
-            : 'timed out during bring-up',
+      final advice = BleBindings.linkUpdate(
+        link,
+        LinkObservation(
+          candidatePresent: device != null,
+          classicLinkUp: classic != null,
+          connected: device?.connected ?? false,
+          bondedFlag: device?.paired ?? false,
+          // Count what is exposed. BlueZ has been observed reporting
+          // ServicesResolved true while exposing nothing.
+          attributeCount: chars.length,
+          controlCharsFound: _complete(writes, notifies),
+          // Encryption is proven by a StartNotify that worked, so the first
+          // subscription is also the evidence for it.
+          notifySucceeded: subscribed.isNotEmpty,
+          // Every channel, not just the first. Taking one successful
+          // StartNotify as proof of all three reaches ready with two
+          // channels deaf.
+          subscribedCount: subscribed.length,
+          requiredSubscriptions: _characteristics.length,
+        ),
+        clock.elapsedMilliseconds,
       );
-    } catch (_) {
-      BleBindings.linkDestroy(link);
-      rethrow;
+      if (advice == null) {
+        throw const GoProBleException(
+          LinkState.absent,
+          StallReason.none,
+          'native and Dart link enums have drifted',
+        );
+      }
+      last = advice;
+
+      if (advice.state.isReady) {
+        return (device: device!, writes: writes, notifies: notifies);
+      }
+
+      await _act(advice, device, classic, link, notifies, subscribed, clock);
     }
+
+    throw GoProBleException(
+      last?.state ?? LinkState.absent,
+      last?.stall ?? StallReason.noAdvertisement,
+      last?.detail.isNotEmpty == true
+          ? last!.detail
+          : 'timed out during bring-up',
+    );
   }
 
   bool _complete(
@@ -370,14 +570,56 @@ class GoProBleTransport {
     }
   }
 
+  /// Subscribes channels not yet subscribed on this climb, recording only
+  /// those whose `StartNotify` actually returned.
+  ///
+  /// `only` caps how many to attempt, which is what the pair stage wants: one
+  /// success is all the evidence encryption needs, and the rest belong to the
+  /// subscribe stage where a failure is diagnosed differently.
+  Future<void> _subscribe(
+    Map<BleChannel, BlueZGattCharacteristic> notifies,
+    Set<BleChannel> subscribed, {
+    int? only,
+  }) async {
+    var attempted = 0;
+    for (final entry in notifies.entries) {
+      if (subscribed.contains(entry.key)) continue;
+      if (only != null && attempted >= only) return;
+      attempted++;
+
+      // Notifying survives a disconnect as stale true, and BlueZ treats
+      // StartNotify on a characteristic it already considers notifying as a
+      // no-op -- it returns success without writing the CCCD. The camera
+      // cleared its side on disconnect, so the descriptor really does need
+      // writing, and the subscription silently never happens.
+      //
+      // Measured on a MAX2 reconnect: writes went out and were acknowledged,
+      // and not one reply came back on the affected channel.
+      //
+      // Reaching this line means the climb has not subscribed this channel,
+      // so a true flag can only be left over. Clear it to force a real CCCD
+      // write.
+      if (entry.value.notifying) {
+        try {
+          await entry.value.stopNotify();
+        } on BlueZException {
+          // Best effort. If it will not stop, StartNotify below decides.
+        }
+      }
+
+      await entry.value.startNotify();
+      subscribed.add(entry.key);
+    }
+  }
+
   Future<void> _act(
     LinkAdvice advice,
     BlueZDevice? device,
     BlueZDevice? classic,
     Pointer<Void> link,
     Map<BleChannel, BlueZGattCharacteristic> notifies,
+    Set<BleChannel> subscribed,
     Stopwatch clock,
-    void Function(bool) setNotifySucceeded,
   ) async {
     final waitMs = advice.retryAtMs - clock.elapsedMilliseconds;
     if (waitMs > 0) {
@@ -413,15 +655,10 @@ class GoProBleTransport {
           // bond is required before any control traffic.
           if (device != null && !device.paired) await device.pair();
           // Proof of encryption is a StartNotify that succeeds, not a flag.
-          if (notifies.isNotEmpty) {
-            await notifies.values.first.startNotify();
-            setNotifySucceeded(true);
-          }
+          await _subscribe(notifies, subscribed, only: 1);
 
         case LinkAction.subscribe:
-          for (final c in notifies.values) {
-            if (!c.notifying) await c.startNotify();
-          }
+          await _subscribe(notifies, subscribed);
 
         case LinkAction.none:
           await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -429,55 +666,6 @@ class GoProBleTransport {
     } on BlueZException {
       BleBindings.linkNoteFailure(link, clock.elapsedMilliseconds);
     }
-  }
-
-  Future<GoProBleCamera> _finish(
-    BlueZDevice device,
-    Map<BleChannel, BlueZGattCharacteristic> notifies,
-    Map<BleChannel, BlueZGattCharacteristic> writes,
-    Pointer<Void> link,
-    Stopwatch clock,
-    Duration keepAlive,
-  ) async {
-    // The negotiated MTU less three bytes of ATT overhead. A MAX2 reports
-    // 517, which is 25 times the floor the default assumes. Read before the
-    // session exists so nothing between here and the constructor can throw
-    // and strand a handle nobody holds a reference to.
-    final mtu = notifies.values
-        .map((c) => c.mtu)
-        .fold<int>(0, (a, b) => a == 0 || b < a ? b : a);
-
-    final events = ReceivePort();
-    final session = BleBindings.create(
-      events.sendPort.nativePort,
-      keepAlive: keepAlive,
-    );
-
-    final camera = GoProBleCamera._(device, session, link)
-      .._events = events
-      .._clock = clock;
-    camera._writes.addAll(writes);
-    camera._notifies.addAll(notifies);
-    events.listen(camera._onEvent);
-
-    if (mtu > 3) BleBindings.setAttPayload(session, mtu - 3);
-
-    for (final entry in notifies.entries) {
-      camera._subs.add(
-        entry.value.value.listen((bytes) {
-          BleBindings.feed(session, entry.key, bytes, camera._now);
-        }),
-      );
-    }
-
-    // Dart drives the clock. A native timer would gain nothing: every write
-    // has to be performed from this isolate anyway.
-    camera._ticker = Timer.periodic(
-      const Duration(milliseconds: 500),
-      (_) => BleBindings.tick(session, camera._now),
-    );
-
-    return camera;
   }
 }
 
