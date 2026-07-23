@@ -51,6 +51,36 @@ class BleBindings {
         int Function(Pointer<Void>, int, Pointer<Uint8>, int, int, int)
       >('gopro_ble_submit');
 
+  static final _submitProtobuf = _lib
+      .lookupFunction<
+        Int32 Function(
+          Pointer<Void>,
+          Uint8,
+          Uint8,
+          Uint8,
+          Pointer<Uint8>,
+          Int32,
+          Uint8,
+          Uint64,
+        ),
+        int Function(
+          Pointer<Void>,
+          int,
+          int,
+          int,
+          Pointer<Uint8>,
+          int,
+          int,
+          int,
+        )
+      >('gopro_ble_submit_protobuf');
+
+  static final _protobufCorrelation = _lib
+      .lookupFunction<
+        Uint64 Function(Uint8, Uint8, Uint8),
+        int Function(int, int, int)
+      >('gopro_ble_protobuf_correlation');
+
   static final _tick = _lib
       .lookupFunction<
         Void Function(Pointer<Void>, Uint64),
@@ -147,6 +177,53 @@ class BleBindings {
       calloc.free(buf);
     }
   }
+
+  /// Submits a protobuf command, framed as `[feature][action][message]`.
+  ///
+  /// [message] is the encoded protobuf alone; the header bytes are prepended
+  /// natively. An empty message is legitimate — several requests have no
+  /// fields.
+  ///
+  /// Returns false if one with the same feature and action is outstanding.
+  static bool submitProtobuf(
+    Pointer<Void> h,
+    BleChannel channel,
+    int featureId,
+    int actionId,
+    List<int> message,
+    BlePriority priority,
+    int nowMs,
+  ) {
+    final buf = calloc<Uint8>(message.isEmpty ? 1 : message.length);
+    try {
+      if (message.isNotEmpty) {
+        buf.asTypedList(message.length).setAll(0, message);
+      }
+      return _submitProtobuf(
+            h,
+            channel.value,
+            featureId,
+            actionId,
+            buf,
+            message.length,
+            priority.value,
+            nowMs,
+          ) !=
+          0;
+    } finally {
+      calloc.free(buf);
+    }
+  }
+
+  /// The correlation id [submitProtobuf] will report for these arguments.
+  ///
+  /// Asked of the native side rather than recomputed here, so the layout —
+  /// including the request-to-response action mapping — lives in one place.
+  static int protobufCorrelation(
+    BleChannel channel,
+    int featureId,
+    int actionId,
+  ) => _protobufCorrelation(channel.value, featureId, actionId);
 
   // ── Link state machine ────────────────────────────────────────────────
 

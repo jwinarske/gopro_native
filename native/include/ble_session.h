@@ -68,6 +68,55 @@ inline constexpr size_t kChannelCount = 3;
   return (static_cast<CorrelationId>(channel) << 8) | leading_byte;
 }
 
+/// Set on a protobuf correlation id to keep it out of the one-byte space.
+///
+/// Without it (channel 2, byte 0xFF) and (channel 0, feature 2, action 0xFF)
+/// are both 0x2FF, and a plain command's response would resolve a protobuf
+/// caller.
+inline constexpr CorrelationId kProtobufCorrelationBit = CorrelationId{1} << 24;
+
+/// Turns a protobuf request action id into the response's.
+///
+/// Open GoPro sets the high bit: 101 -> 229, 110 -> 238, 5 -> 133. A protobuf
+/// reply carries the response action id, so a caller waiting on a request has
+/// to be registered under the reply's.
+[[nodiscard]] constexpr uint8_t protobuf_response_action(uint8_t request) {
+  return request | 0x80;
+}
+
+/// The channel a correlation id belongs to, for either width.
+///
+/// The queue does not know about channels, so the channel has to be
+/// recoverable from the id it hands back. The two widths keep it in different
+/// places, which is worth stating once here rather than open-coding a shift
+/// at each use: reading a wide id as a narrow one yields the feature id,
+/// which is a plausible-looking channel number and silently writes to the
+/// wrong characteristic.
+[[nodiscard]] constexpr Channel channel_of_correlation(CorrelationId id) {
+  const auto shift = (id & kProtobufCorrelationBit) != 0 ? 16 : 8;
+  return static_cast<Channel>((id >> shift) & 0xFF);
+}
+
+/// Correlation id for a protobuf message, which is framed as
+/// `[feature id][action id][encoded message]`.
+///
+/// Two bytes wide because one is not enough to tell protobuf commands apart:
+/// every COHN request leads with the same feature id, so correlating on the
+/// leading byte alone makes them all one id. They would serialize against
+/// each other for no reason, and — worse — a registered status notification
+/// arriving on that feature would resolve whichever unrelated request
+/// happened to be outstanding.
+///
+/// Pass the *request* action id; the mapping to the reply's is applied here.
+[[nodiscard]] constexpr CorrelationId correlation_of_protobuf(
+    Channel channel,
+    uint8_t feature_id,
+    uint8_t request_action_id) {
+  return kProtobufCorrelationBit | (static_cast<CorrelationId>(channel) << 16) |
+         (static_cast<CorrelationId>(feature_id) << 8) |
+         protobuf_response_action(request_action_id);
+}
+
 /// Setting id 91, value 66: the write that keeps the link alive.
 inline constexpr uint8_t kLedSettingId = 91;
 inline constexpr uint8_t kKeepAliveValue = 66;
@@ -125,6 +174,21 @@ class BleSession {
               Priority priority,
               uint64_t now_ms);
 
+  /// Submits a protobuf command, framed as `[feature][action][payload]`.
+  ///
+  /// Correlated on both header bytes rather than the leading one, so requests
+  /// sharing a feature id are distinct commands rather than one. `payload` is
+  /// the encoded message alone; the two header bytes are prepended here.
+  ///
+  /// Returns false if a protobuf command with the same feature and action is
+  /// already outstanding.
+  bool submit_protobuf(Channel channel,
+                       uint8_t feature_id,
+                       uint8_t action_id,
+                       std::span<const uint8_t> message,
+                       Priority priority,
+                       uint64_t now_ms);
+
   /// Drives command timeouts and the keep-alive. Call regularly; the
   /// interval only bounds keep-alive jitter, not correctness.
   void tick(uint64_t now_ms);
@@ -144,6 +208,13 @@ class BleSession {
 
  private:
   void deliver(Channel channel, std::vector<uint8_t> message, uint64_t now_ms);
+
+  /// Shared tail of both submit forms: hands the payload to the queue under
+  /// `id` and wires the completion back to on_response_.
+  bool enqueue(CorrelationId id,
+               std::vector<uint8_t> payload,
+               Priority priority,
+               uint64_t now_ms);
 
   SessionConfig cfg_;
   WriteFn write_;

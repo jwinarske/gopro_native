@@ -28,6 +28,18 @@ CorrelationId correlation_of_message(Channel channel,
                          : correlation_of(channel, message[0]);
 }
 
+/// The correlation id a protobuf reply would carry, if this is one.
+///
+/// A reply is framed `[feature][action][message]` with the action id already
+/// in its response form, so no mapping is applied here — that happens at
+/// submit time.
+CorrelationId protobuf_correlation_of_message(
+    Channel channel,
+    std::span<const uint8_t> message) {
+  return kProtobufCorrelationBit | (static_cast<CorrelationId>(channel) << 16) |
+         (static_cast<CorrelationId>(message[0]) << 8) | message[1];
+}
+
 /// Setting write: [setting id][length][value].
 std::vector<uint8_t> keep_alive_payload() {
   return {kLedSettingId, 1, kKeepAliveValue};
@@ -42,7 +54,7 @@ BleSession::BleSession(WriteFn write, SessionConfig cfg)
           // The queue does not know about channels, so recover the channel
           // from the correlation id it hands back.
           [this](CorrelationId id, std::span<const uint8_t> payload) {
-            const auto channel = static_cast<Channel>((id >> 8) & 0xFF);
+            const Channel channel = channel_of_correlation(id);
             for (const auto& packet : fragment(payload, cfg_.att_payload)) {
               if (write_) {
                 write_(channel, packet);
@@ -85,7 +97,18 @@ void BleSession::feed(Channel channel,
 void BleSession::deliver(Channel channel,
                          std::vector<uint8_t> message,
                          uint64_t now_ms) {
-  const CorrelationId id = correlation_of_message(channel, message);
+  // Try the two-byte protobuf id first. A reply cannot be identified from its
+  // own bytes -- both forms are just leading bytes -- so the tie is broken by
+  // what is actually outstanding. Only one of the two can be, because a
+  // protobuf id carries a bit no one-byte id has.
+  CorrelationId id = correlation_of_message(channel, message);
+  if (message.size() >= 2) {
+    const CorrelationId wide =
+        protobuf_correlation_of_message(channel, message);
+    if (queue_.is_in_flight(wide)) {
+      id = wide;
+    }
+  }
 
   // A reply to something outstanding resolves it. Anything else is a push.
   if (queue_.on_response(id, message, now_ms)) {
@@ -133,12 +156,39 @@ bool BleSession::submit(Channel channel,
   if (payload.empty()) {
     return false;
   }
-  const CorrelationId id = correlation_of(channel, payload[0]);
+  return enqueue(correlation_of(channel, payload[0]),
+                 std::vector<uint8_t>(payload.begin(), payload.end()), priority,
+                 now_ms);
+}
+
+bool BleSession::submit_protobuf(Channel channel,
+                                 uint8_t feature_id,
+                                 uint8_t action_id,
+                                 std::span<const uint8_t> message,
+                                 Priority priority,
+                                 uint64_t now_ms) {
+  // An empty encoded message is legitimate: RequestClearCOHNCert and
+  // RequestCOHNCert have no fields, so the two header bytes are the whole
+  // command.
+  std::vector<uint8_t> payload;
+  payload.reserve(message.size() + 2);
+  payload.push_back(feature_id);
+  payload.push_back(action_id);
+  payload.insert(payload.end(), message.begin(), message.end());
+
+  return enqueue(correlation_of_protobuf(channel, feature_id, action_id),
+                 std::move(payload), priority, now_ms);
+}
+
+bool BleSession::enqueue(CorrelationId id,
+                         std::vector<uint8_t> payload,
+                         Priority priority,
+                         uint64_t now_ms) {
   // The queue reports the outcome; forward it with the correlation id so a
   // caller can tell which submission finished. `this` outlives the queue,
   // which is a member.
   return queue_.submit(
-      id, std::vector<uint8_t>(payload.begin(), payload.end()), priority,
+      id, std::move(payload), priority,
       [this, id](Outcome outcome, std::span<const uint8_t> response) {
         if (on_response_) {
           on_response_(id, outcome, response);
