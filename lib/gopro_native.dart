@@ -14,6 +14,14 @@ export 'src/cohn/cohn_http.dart' show CohnHttp, pinnedClient;
 export 'src/cohn/credentials.dart'
     show CohnCredentials, CohnCredentialStore, FileCredentialStore;
 export 'src/discovery.dart' show GoProDiscovery;
+export 'src/wifi/access_point.dart' show GoProAccessPoint;
+export 'src/wifi/wifi_controller.dart'
+    show
+        ApCredentials,
+        ManualWifiController,
+        NmcliWifiController,
+        WifiController,
+        WifiJoinException;
 export 'src/ffi/ble_codec.dart'
     show
         BleChannel,
