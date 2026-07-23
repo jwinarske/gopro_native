@@ -38,6 +38,10 @@ GOPRO_COPYRIGHT = "Copyright © 2021-2024 GoPro, Inc."
 # Enum base classes in the upstream SDK whose members are plain ints.
 INT_ENUM_BASES = {"GoProIntEnum", "IntEnum"}
 
+# ...and whose members are strings. WebcamProtocol is the only one, and its
+# values go on the wire as query arguments rather than as integers.
+STR_ENUM_BASES = {"GoProEnum"}
+
 
 class GenError(Exception):
     pass
@@ -110,6 +114,7 @@ MODULE_SUFFIX = {
     "settings.py": "Setting",
     "statuses.py": "Status",
     "constants.py": "Constant",
+    "streaming.py": "Streaming",
 }
 
 
@@ -154,12 +159,35 @@ def as_int_literal(node: ast.expr) -> int | None:
     return None
 
 
+def as_str_literal(node: ast.expr) -> str | None:
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    return None
+
+
+def is_auto(node: ast.expr) -> bool:
+    """`enum.auto()` or a bare `auto()`.
+
+    A class built from these has no wire values -- the numbers are whatever
+    Python assigned. StreamType is one: it discriminates between stream kinds
+    inside the SDK and never reaches the camera.
+    """
+    call = node.func if isinstance(node, ast.Call) else None
+    if isinstance(call, ast.Name):
+        return call.id == "auto"
+    return isinstance(call, ast.Attribute) and call.attr == "auto"
+
+
 class ParsedEnum:
-    def __init__(self, name: str, doc: str | None):
+    def __init__(self, name: str, doc: str | None, value_type: str = "int"):
         self.name = name
         self.dart_name = to_upper_camel(name)
         self.doc = doc
-        self.members: list[tuple[str, int, str | None]] = []
+        # "int" or "str". Decided by the upstream base class, not guessed
+        # from the members: an enum with one string member and one integer
+        # member would be a bug worth failing on rather than coercing.
+        self.value_type = value_type
+        self.members: list[tuple[str, object, str | None]] = []
 
 
 def parse_module(path: pathlib.Path) -> list[ParsedEnum]:
@@ -170,10 +198,25 @@ def parse_module(path: pathlib.Path) -> list[ParsedEnum]:
         if not isinstance(node, ast.ClassDef):
             continue
         bases = {b.id for b in node.bases if isinstance(b, ast.Name)}
-        if not (bases & INT_ENUM_BASES):
+        if bases & INT_ENUM_BASES:
+            value_type = "int"
+        elif bases & STR_ENUM_BASES:
+            value_type = "str"
+        else:
             continue
 
-        enum = ParsedEnum(node.name, ast.get_docstring(node))
+        # A class whose members are all auto() carries no wire values. Say so
+        # rather than skipping in silence, so a genuinely new enum that
+        # happens to use auto() is noticed instead of quietly missing.
+        assigns = [
+            st for st in node.body
+            if isinstance(st, ast.Assign) and len(st.targets) == 1
+        ]
+        if assigns and all(is_auto(st.value) for st in assigns):
+            print(f"  skipping {node.name}: enum.auto(), so no wire values")
+            continue
+
+        enum = ParsedEnum(node.name, ast.get_docstring(node), value_type)
         body = node.body
         for i, stmt in enumerate(body):
             if not isinstance(stmt, ast.Assign) or len(stmt.targets) != 1:
@@ -181,13 +224,17 @@ def parse_module(path: pathlib.Path) -> list[ParsedEnum]:
             target = stmt.targets[0]
             if not isinstance(target, ast.Name):
                 continue
-            const = as_int_literal(stmt.value)
+            const = (
+                as_int_literal(stmt.value) if enum.value_type == "int"
+                else as_str_literal(stmt.value)
+            )
             if const is None:
                 # Aliases and computed members are not representable as Dart
                 # enum members; skipping silently would lose data, so refuse.
                 raise GenError(
-                    f"{path.name}:{stmt.lineno} {node.name}.{target.id} is not an "
-                    f"integer literal ({ast.dump(stmt.value)[:60]})"
+                    f"{path.name}:{stmt.lineno} {node.name}.{target.id} is not "
+                    f"a {enum.value_type} literal "
+                    f"({ast.dump(stmt.value)[:60]})"
                 )
             # A bare string immediately after the assignment is the member doc.
             doc = None
@@ -234,9 +281,16 @@ def doc_comment(text: str | None, indent: str = "") -> str:
     return "".join(f"{indent}/// {ln}\n".rstrip() + "\n" for ln in lines)
 
 
+def dart_literal(value: object) -> str:
+    if isinstance(value, str):
+        return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'"
+    return str(value)
+
+
 def emit_enum(e: ParsedEnum) -> str:
+    dart_type = "String" if e.value_type == "str" else "int"
     seen: dict[str, str] = {}
-    seen_values: dict[int, str] = {}
+    seen_values: dict[object, str] = {}
     members = []
     for raw, value, doc in e.members:
         ident = safe_member(raw)
@@ -265,14 +319,14 @@ def emit_enum(e: ParsedEnum) -> str:
             out.append(doc_comment(doc, "  "))
         out.append(f"  /// Upstream name: `{raw}`\n" if not doc else "")
         term = ";" if i == len(members) - 1 else ","
-        out.append(f"  {ident}({value}){term}\n")
+        out.append(f"  {ident}({dart_literal(value)}){term}\n")
     out.append(f"""
   const {e.dart_name}(this.value);
 
   /// Wire value written to / read from the camera.
-  final int value;
+  final {dart_type} value;
 
-  static final Map<int, {e.dart_name}> _byValue = {{
+  static final Map<{dart_type}, {e.dart_name}> _byValue = {{
     for (final v in {e.dart_name}.values) v.value: v,
   }};
 
@@ -281,7 +335,7 @@ def emit_enum(e: ParsedEnum) -> str:
   /// Returns null for an unrecognized value rather than throwing — newer
   /// firmware can and does introduce values this table predates, and an
   /// unknown setting must not take down the connection.
-  static {e.dart_name}? fromValue(int value) => _byValue[value];
+  static {e.dart_name}? fromValue({dart_type} value) => _byValue[value];
 }}
 """)
     return "".join(out)
@@ -322,6 +376,7 @@ MODULES = {
     "settings.py": "settings.dart",
     "statuses.py": "statuses.dart",
     "constants.py": "constants.dart",
+    "streaming.py": "streaming.dart",
 }
 
 

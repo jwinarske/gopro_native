@@ -14,6 +14,11 @@ export 'src/cohn/cohn_http.dart' show CohnHttp, pinnedClient;
 export 'src/cohn/credentials.dart'
     show CohnCredentials, CohnCredentialStore, FileCredentialStore;
 export 'src/discovery.dart' show GoProDiscovery;
+export 'src/generated/streaming.dart';
+export 'src/streaming/livestream.dart'
+    show LivestreamClient, LivestreamException;
+export 'src/streaming/webcam.dart'
+    show WebcamClient, WebcamException, WebcamReply;
 export 'src/wifi/access_point.dart' show GoProAccessPoint;
 export 'src/wifi/wifi_controller.dart'
     show
