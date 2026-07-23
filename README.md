@@ -36,6 +36,7 @@ surface on the wired path.
 | `lib/src/http/commands.dart` | 40 typed commands over the generated table |
 | `lib/proto/*.dart` | protobuf, split per feature so descriptors tree shake |
 | `lib/src/cohn/` | COHN provisioning, credential storage, pinned TLS |
+| `lib/src/wifi/` | camera access point, host join behind an interface |
 
 Events are posted from a native worker thread via `Dart_PostCObject_DL`,
 which is thread-safe and callable from any thread. Dart never pumps anything.
@@ -417,6 +418,59 @@ An incomplete message is sent as zero bytes and shows up as the camera
 ignoring a command. `isInitialized()` reports it and `check()` names the
 missing field; anything putting a message on the wire has to call one of them.
 
+## Wi-Fi access point
+
+Turning the camera's access point on is protocol work. Joining it is not — it
+is whatever the host's network stack does, and there is no portable answer.
+The reference spends roughly 1500 lines shelling out to `nmcli`,
+`networksetup`, `netsh` and a `system_profiler` pipeline to cover that.
+
+So joining is an interface with a default that does nothing but say what
+needs doing:
+
+```dart
+final ap = GoProAccessPoint(camera);           // ManualWifiController
+await ap.setEnabled(enabled: true);
+final creds = await ap.credentials();          // SSID and passphrase over BLE
+
+// Or let NetworkManager do it:
+GoProAccessPoint(camera, controller: NmcliWifiController());
+```
+
+The SSID and passphrase are plain readable GATT characteristics on the Wi-Fi
+Access Point service (`b5f90002` / `b5f90003`), not commands, so
+`readCharacteristic` reads them directly rather than going through the
+session.
+
+**Arguments are passed as argv, never interpolated into a shell string.** The
+reference formats the SSID and passphrase into a command and runs it with
+`shell=True`. An SSID is 32 arbitrary bytes chosen by whoever runs the access
+point and a passphrase can contain anything, so that is command injection
+with the attacker supplying the network name. This is not a theoretical
+concern about exotic input either — a real MAX2 reports
+`GoPro 24642729`, which contains a space and would split into two arguments
+before anyone tried anything.
+
+Neither `ApCredentials.toString` nor the manual controller's instruction
+contains the passphrase, and `nmcli` output is scrubbed of it before it
+reaches an exception.
+
+## DEBUG NOTE — the ready gate has to be opened
+
+The gate is derived from the BUSY and ENCODING statuses, and both start
+unknown, so it starts shut. Nothing opens it on its own: it takes a status
+query naming those two, and a query is fastpass so it is not itself gated.
+
+Until that happens every `kQueued` command waits behind a gate that will
+never open, then fails on the queue deadline with a timeout that says
+nothing about the cause. Measured on a MAX2: `setThirdPartyClientInfo`, AP
+control, and every other command-channel write timed out with no reply,
+while queries answered normally — which reads like a camera that has stopped
+accepting commands rather than a gate nobody opened.
+
+`connect()` now issues that query as soon as the link is up. If you build a
+session by another route, issue it yourself.
+
 ## COHN
 
 Camera On the Home Network: the camera reachable over an existing network
@@ -511,7 +565,12 @@ provisioning.
 Provisioning itself is not yet exercised end to end: it requires a camera
 already joined to a network, which is network management and not built.
 
-Not yet implemented: Wi-Fi.
+The camera access point is validated on a MAX2: SSID and passphrase read
+over BLE, AP status 69 driven from 0 to 1 and back, the camera left as it was
+found.
+
+Not yet implemented: joining the camera to an existing network, livestream
+and webcam control.
 
 ## License
 

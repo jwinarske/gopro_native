@@ -31,6 +31,11 @@ final Map<BleChannel, ({String write, String notify})> _characteristics = {
   BleChannel.query: (write: _gp('0076'), notify: _gp('0077')),
 };
 
+/// The two statuses the ready gate is derived from. Native calls them
+/// kStatusBusy and kStatusEncoding.
+const int kBusyStatusId = 8;
+const int kEncodingStatusId = 10;
+
 /// What bring-up produced: the device and its six control characteristics.
 typedef _Attached = ({
   BlueZDevice device,
@@ -165,6 +170,26 @@ class GoProBleCamera {
     return completer.future;
   }
 
+  /// Reads a characteristic outside the three control channels.
+  ///
+  /// The Wi-Fi Access Point service keeps the camera's SSID and passphrase as
+  /// plain readable characteristics rather than behind the command protocol,
+  /// so those need an ordinary GATT read. Nothing here is framed, correlated
+  /// or queued — it does not go through the session at all.
+  ///
+  /// Throws [StateError] if the link is not up or the characteristic is not
+  /// present, which is how an unsupported service presents.
+  Future<List<int>> readCharacteristic(String uuid) async {
+    if (_state != CameraLink.up) {
+      throw StateError('camera link is ${_state.name}');
+    }
+    final want = uuid.toLowerCase();
+    for (final c in _device.gattCharacteristics) {
+      if (c.uuid.toString().toLowerCase() == want) return c.readValue();
+    }
+    throw StateError('the camera exposes no characteristic $uuid');
+  }
+
   /// Asks the camera for the values of `statusIds`.
   Future<BleResponse> queryStatuses(List<int> statusIds) =>
       send(BleChannel.query, [0x13, ...statusIds]);
@@ -296,6 +321,20 @@ class GoProBleCamera {
         }),
       );
     }
+
+    // Establish the ready gate. It derives from the busy and encoding
+    // statuses, and both start unknown, so until something asks for them
+    // every queued command waits behind a gate that will never open on its
+    // own — and then fails with a timeout that says nothing about why.
+    //
+    // Fastpass, so it does not wait behind the gate it exists to open.
+    // Unawaited: the reply resolves through the ordinary path and the caller
+    // has no reason to block on it.
+    unawaited(
+      queryStatuses([kBusyStatusId, kEncodingStatusId]).catchError(
+        (Object e) => BleResponse(0, BleOutcome.canceled, Uint8List(0)),
+      ),
+    );
 
     // Three ways to notice the link going away, because none of them is
     // sufficient alone. The property change is the fast path; the device
