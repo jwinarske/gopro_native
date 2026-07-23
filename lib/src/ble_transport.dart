@@ -169,6 +169,59 @@ class GoProBleCamera {
   Future<BleResponse> queryStatuses(List<int> statusIds) =>
       send(BleChannel.query, [0x13, ...statusIds]);
 
+  /// Sends a protobuf command and waits for its reply.
+  ///
+  /// [message] is the encoded protobuf; the `[feature][action]` header is
+  /// prepended natively. The reply's payload includes that header, so a
+  /// caller decoding it must skip the first two bytes.
+  ///
+  /// Correlated on both header bytes rather than the leading one. Every
+  /// request within a feature shares its feature id, so correlating on that
+  /// alone would make them a single command — and would hand a registered
+  /// notification to whichever request happened to be outstanding.
+  ///
+  /// Throws [StateError] if one with the same feature and action is already
+  /// outstanding, or if the link is not up.
+  Future<BleResponse> sendProtobuf(
+    int featureId,
+    int actionId,
+    List<int> message, {
+    BleChannel channel = BleChannel.command,
+    BlePriority priority = BlePriority.queued,
+  }) {
+    if (_state != CameraLink.up) {
+      throw StateError('camera link is ${_state.name}');
+    }
+
+    final id = BleBindings.protobufCorrelation(channel, featureId, actionId);
+    if (_pending.containsKey(id)) {
+      throw StateError(
+        'a protobuf command for feature 0x${featureId.toRadixString(16)} '
+        'action $actionId is already outstanding',
+      );
+    }
+
+    final completer = Completer<BleResponse>();
+    _pending[id] = completer;
+
+    if (!BleBindings.submitProtobuf(
+      _session,
+      channel,
+      featureId,
+      actionId,
+      message,
+      priority,
+      _now,
+    )) {
+      _pending.remove(id);
+      throw StateError(
+        'submission refused for feature 0x${featureId.toRadixString(16)} '
+        'action $actionId',
+      );
+    }
+    return completer.future;
+  }
+
   Future<void> close() async {
     if (_state == CameraLink.down) return;
     _setState(CameraLink.down);

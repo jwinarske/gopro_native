@@ -166,6 +166,39 @@ int32_t gopro_ble_submit(void* handle,
   return accepted ? 1 : 0;
 }
 
+int32_t gopro_ble_submit_protobuf(void* handle,
+                                  uint8_t channel,
+                                  uint8_t feature_id,
+                                  uint8_t action_id,
+                                  const uint8_t* message,
+                                  int32_t len,
+                                  uint8_t priority,
+                                  uint64_t now_ms) {
+  if (handle == nullptr || len < 0 || (message == nullptr && len > 0)) {
+    return 0;
+  }
+  if (channel >= gp::ble::kChannelCount ||
+      priority > static_cast<uint8_t>(Priority::kKeepAlive)) {
+    return 0;
+  }
+  auto* ctx = static_cast<BleContext*>(handle);
+  const bool accepted = ctx->session->submit_protobuf(
+      static_cast<Channel>(channel), feature_id, action_id,
+      std::span<const uint8_t>(message, static_cast<size_t>(len)),
+      static_cast<Priority>(priority), now_ms);
+  return accepted ? 1 : 0;
+}
+
+uint64_t gopro_ble_protobuf_correlation(uint8_t channel,
+                                        uint8_t feature_id,
+                                        uint8_t action_id) {
+  if (channel >= gp::ble::kChannelCount) {
+    return 0;
+  }
+  return gp::ble::correlation_of_protobuf(static_cast<Channel>(channel),
+                                          feature_id, action_id);
+}
+
 void gopro_ble_tick(void* handle, uint64_t now_ms) {
   if (handle == nullptr) {
     return;
