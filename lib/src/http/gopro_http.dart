@@ -56,8 +56,10 @@ class GoProHttp {
     this.base, {
     this.requestTimeout = const Duration(seconds: 5),
     this.stallTimeout = const Duration(seconds: 30),
+    Map<String, String> headers = const {},
     HttpClient? client,
-  }) : _client = client ?? HttpClient() {
+  }) : _headers = Map.unmodifiable(headers),
+       _client = client ?? HttpClient() {
     // Applies to establishing the connection, not to the exchange. Downloads
     // must not inherit a deadline from it.
     _client.connectionTimeout = const Duration(seconds: 5);
@@ -76,6 +78,14 @@ class GoProHttp {
 
   /// How long a download may deliver nothing before it is abandoned.
   final Duration stallTimeout;
+
+  /// Sent with every request. COHN puts HTTP Basic auth here.
+  ///
+  /// Never logged, and deliberately not exposed: an exception carrying the
+  /// request headers would put the Basic token — which is the password, only
+  /// base64'd — into whatever collects that exception. The reference lets it
+  /// through its logging.
+  final Map<String, String> _headers;
 
   final HttpClient _client;
   var _closed = false;
@@ -123,6 +133,7 @@ class GoProHttp {
       final request = message.method == HttpMethod.put
           ? await _client.putUrl(uri)
           : await _client.getUrl(uri);
+      _headers.forEach(request.headers.set);
 
       if (message.method == HttpMethod.put) {
         request.headers.contentType = ContentType.json;
@@ -164,6 +175,7 @@ class GoProHttp {
     final uri = message.url(base, values);
 
     final request = await _client.getUrl(uri);
+    _headers.forEach(request.headers.set);
     final response = await request.close();
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
