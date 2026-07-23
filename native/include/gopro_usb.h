@@ -129,7 +129,8 @@ struct Camera {
 
 // Build the /sys/bus/usb/devices entry name: "<bus>-<port>[.<port>...]".
 // A device directly on a root hub with no ports yields "usb<bus>".
-[[nodiscard]] std::string sysfs_name(uint8_t bus, std::span<const uint8_t> ports);
+[[nodiscard]] std::string sysfs_name(uint8_t bus,
+                                     std::span<const uint8_t> ports);
 
 // ---------------------------------------------------------------------------
 // Filesystem helper
@@ -172,8 +173,9 @@ struct Camera {
 //   3. Wait for Readiness::kHostAddressed before reading the name at all;
 //      by then udev has long since settled.
 // ===========================================================================
-[[nodiscard]] std::string find_netdev(std::string_view sysfs_name,
-                                      std::string_view root = "/sys/bus/usb/devices");
+[[nodiscard]] std::string find_netdev(
+    std::string_view sysfs_name,
+    std::string_view root = "/sys/bus/usb/devices");
 
 // Re-resolve c.netdev from sysfs and maintain the rename diagnostics
 // (netdev_first_seen / netdev_renamed). Idempotent and cheap; call it rather
@@ -192,7 +194,8 @@ void resolve_netdev(Camera& c, std::string_view root = "/sys/bus/usb/devices");
 // Re-sample every stage and update c.readiness, c.netdev, c.host_ip,
 // c.link_state. Cheap enough to poll. `probe_port` of 0 stops at
 // kHostAddressed without opening a socket.
-Readiness advance_readiness(Camera& c, uint16_t probe_port = 8080,
+Readiness advance_readiness(Camera& c,
+                            uint16_t probe_port = 8080,
                             int probe_timeout_ms = 500);
 
 // Poll advance_readiness() until kL3Ready or the deadline expires. Returns
@@ -203,7 +206,9 @@ Readiness advance_readiness(Camera& c, uint16_t probe_port = 8080,
 // Do NOT call this from a libusb hotplug callback: it blocks for seconds and
 // the callback runs on the event thread. Record the arrival, then settle it
 // from your own loop.
-Readiness wait_until_ready(Camera& c, int timeout_ms, int poll_ms = 50,
+Readiness wait_until_ready(Camera& c,
+                           int timeout_ms,
+                           int poll_ms = 50,
                            uint16_t probe_port = 8080);
 
 // ---------------------------------------------------------------------------
@@ -245,6 +250,8 @@ class Discovery {
 // TCP-connect probe against <ip>:8080 with a bounded timeout. This is what
 // actually validates the whole premise -- that a serial read over USB yields
 // an address the HTTP control API answers on. Returns true on connect.
-[[nodiscard]] bool probe_tcp(std::string_view ip, uint16_t port, int timeout_ms);
+[[nodiscard]] bool probe_tcp(std::string_view ip,
+                             uint16_t port,
+                             int timeout_ms);
 
 }  // namespace gp

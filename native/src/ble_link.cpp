@@ -8,39 +8,60 @@ namespace gp::ble {
 
 std::string_view to_string(LinkState s) {
   switch (s) {
-    case LinkState::kAbsent: return "absent";
-    case LinkState::kAdvertising: return "advertising";
-    case LinkState::kConnected: return "connected";
-    case LinkState::kServicesResolved: return "services-resolved";
-    case LinkState::kEncrypted: return "encrypted";
-    case LinkState::kReady: return "ready";
+    case LinkState::kAbsent:
+      return "absent";
+    case LinkState::kAdvertising:
+      return "advertising";
+    case LinkState::kConnected:
+      return "connected";
+    case LinkState::kServicesResolved:
+      return "services-resolved";
+    case LinkState::kEncrypted:
+      return "encrypted";
+    case LinkState::kReady:
+      return "ready";
   }
   return "?";
 }
 
 std::string_view to_string(LinkAction a) {
   switch (a) {
-    case LinkAction::kNone: return "none";
-    case LinkAction::kScan: return "scan";
-    case LinkAction::kDisconnectClassic: return "disconnect-classic";
-    case LinkAction::kConnect: return "connect";
-    case LinkAction::kWaitForServices: return "wait-for-services";
-    case LinkAction::kPair: return "pair";
-    case LinkAction::kSubscribe: return "subscribe";
+    case LinkAction::kNone:
+      return "none";
+    case LinkAction::kScan:
+      return "scan";
+    case LinkAction::kDisconnectClassic:
+      return "disconnect-classic";
+    case LinkAction::kConnect:
+      return "connect";
+    case LinkAction::kWaitForServices:
+      return "wait-for-services";
+    case LinkAction::kPair:
+      return "pair";
+    case LinkAction::kSubscribe:
+      return "subscribe";
   }
   return "?";
 }
 
 std::string_view to_string(StallReason r) {
   switch (r) {
-    case StallReason::kNone: return "none";
-    case StallReason::kNoAdvertisement: return "no-advertisement";
-    case StallReason::kClassicBlocking: return "classic-blocking";
-    case StallReason::kConnectFailed: return "connect-failed";
-    case StallReason::kServicesNeverAppeared: return "services-never-appeared";
-    case StallReason::kWrongDevice: return "wrong-device";
-    case StallReason::kNotEncrypted: return "not-encrypted";
-    case StallReason::kSubscribeFailed: return "subscribe-failed";
+    case StallReason::kNone:
+      return "none";
+    case StallReason::kNoAdvertisement:
+      return "no-advertisement";
+    case StallReason::kClassicBlocking:
+      return "classic-blocking";
+    case StallReason::kConnectFailed:
+      return "connect-failed";
+    case StallReason::kServicesNeverAppeared:
+      return "services-never-appeared";
+    case StallReason::kWrongDevice:
+      return "wrong-device";
+    case StallReason::kNotEncrypted:
+      return "not-encrypted";
+    case StallReason::kSubscribeFailed:
+      return "subscribe-failed";
   }
   return "?";
 }
@@ -56,11 +77,13 @@ void LinkMachine::reset() {
 }
 
 uint32_t LinkMachine::backoff_ms() const {
-  if (attempts_ == 0) return 0;
+  if (attempts_ == 0)
+    return 0;
   // Exponential, capped. A camera that is asleep will not wake because we
   // asked faster.
   uint64_t ms = cfg_.backoff_initial_ms;
-  for (uint32_t i = 1; i < attempts_ && ms < cfg_.backoff_max_ms; ++i) ms *= 2;
+  for (uint32_t i = 1; i < attempts_ && ms < cfg_.backoff_max_ms; ++i)
+    ms *= 2;
   return static_cast<uint32_t>(std::min<uint64_t>(ms, cfg_.backoff_max_ms));
 }
 
@@ -84,7 +107,8 @@ LinkState LinkMachine::classify(const LinkObservation& obs) const {
   // Encryption is proven only by a StartNotify that worked. The Bonded flag is
   // not evidence: a BR-EDR bond sets it while leaving the LE link unencrypted,
   // and discovery succeeds unencrypted anyway.
-  if (!obs.notify_succeeded) return LinkState::kServicesResolved;
+  if (!obs.notify_succeeded)
+    return LinkState::kServicesResolved;
 
   if (obs.subscribed_count < obs.required_subscriptions) {
     return LinkState::kEncrypted;
@@ -182,7 +206,8 @@ LinkAdvice LinkMachine::update(const LinkObservation& obs, uint64_t now_ms) {
                   "is set, which is misleading -- a BR-EDR bond does not "
                   "encrypt the LE link. An LE bond is required: put the camera "
                   "in pairing mode and pair the random-address device."
-                : "Discovery works but StartNotify is refused (\"Not paired\"). "
+                : "Discovery works but StartNotify is refused (\"Not "
+                  "paired\"). "
                   "The Control & Query characteristics need an encrypted link. "
                   "Put the camera in pairing mode and pair over LE.";
       }
