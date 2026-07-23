@@ -22,6 +22,8 @@
     gopro_ble_destroy;
     gopro_ble_feed;
     gopro_ble_submit;
+    gopro_ble_submit_protobuf;
+    gopro_ble_protobuf_correlation;
     gopro_ble_tick;
     gopro_ble_set_att_payload;
     gopro_ble_disconnect;

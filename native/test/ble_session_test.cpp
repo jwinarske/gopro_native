@@ -233,6 +233,99 @@ void test_response_resolves_the_submitter() {
   check(!done.empty() && done[0].second == Outcome::kResponded, "responded");
 }
 
+// The COHN feature and two of its actions, which is where this matters.
+constexpr uint8_t kFeatureCommand = 0xF1;
+constexpr uint8_t kGetCohnStatus = 111;   // reply 239
+constexpr uint8_t kCreateCohnCert = 103;  // reply 231
+
+void test_protobuf_correlates_on_two_bytes() {
+  std::printf("protobuf correlation\n");
+  Wire w;
+  BleSession s(w.fn());
+  feed_message(s, Channel::kQuery, status(0, 0), 0);
+
+  std::vector<std::pair<CorrelationId, Outcome>> done;
+  s.on_response([&](CorrelationId id, Outcome o, std::span<const uint8_t>) {
+    done.emplace_back(id, o);
+  });
+
+  // Both lead with the same feature id. Correlating on the leading byte makes
+  // them one command: the second submission would be refused as a duplicate,
+  // and its reply would resolve the first.
+  //
+  // kFastpass so both are genuinely in flight at once -- kQueued commands
+  // serialize against each other, which would hide the collision rather than
+  // expose it.
+  const bool a = s.submit_protobuf(Channel::kCommand, kFeatureCommand,
+                                   kGetCohnStatus, {}, Priority::kFastpass, 10);
+  const bool b =
+      s.submit_protobuf(Channel::kCommand, kFeatureCommand, kCreateCohnCert, {},
+                        Priority::kFastpass, 10);
+  check(a && b, "two requests on one feature are two commands");
+
+  // The header goes out ahead of the encoded message.
+  const auto sent = w.messages(Channel::kCommand);
+  check(sent.size() == 2, "both reached the wire");
+  check(!sent.empty() &&
+            sent[0] == std::vector<uint8_t>{kFeatureCommand, kGetCohnStatus},
+        "feature and action are prepended");
+
+  // Replies carry the response action id, which is the request's high bit set.
+  feed_message(s, Channel::kCommand, {kFeatureCommand, 231, 0x08, 0x01}, 20);
+  check(done.size() == 1, "the create-cert reply resolved exactly one");
+  check(!done.empty() && done[0].first == correlation_of_protobuf(
+                                              Channel::kCommand,
+                                              kFeatureCommand, kCreateCohnCert),
+        "and it was the create-cert caller, not the status one");
+
+  feed_message(s, Channel::kCommand, {kFeatureCommand, 239, 0x08, 0x01}, 30);
+  check(done.size() == 2, "the status reply resolved the other");
+  check(done.size() == 2 &&
+            done[1].first == correlation_of_protobuf(Channel::kCommand,
+                                                     kFeatureCommand,
+                                                     kGetCohnStatus),
+        "correct correlation id");
+}
+
+void test_protobuf_ids_do_not_collide_with_plain_ones() {
+  std::printf("protobuf and plain correlation spaces are disjoint\n");
+  // (channel 2, byte 0xFF) and (channel 0, feature 2, action 0xFF) would both
+  // be 0x2FF without the discriminating bit, and a plain command's reply would
+  // resolve a protobuf caller.
+  check(correlation_of(Channel::kQuery, 0xFF) !=
+            correlation_of_protobuf(Channel::kCommand, 0x02, 0x7F),
+        "the narrow and wide spaces do not overlap");
+  check(protobuf_response_action(101) == 229, "101 -> 229");
+  check(protobuf_response_action(110) == 238, "110 -> 238");
+  check(protobuf_response_action(5) == 133, "5 -> 133");
+}
+
+void test_protobuf_notification_is_a_push_not_a_response() {
+  std::printf("protobuf notifications are pushes\n");
+  Wire w;
+  BleSession s(w.fn());
+  feed_message(s, Channel::kQuery, status(0, 0), 0);
+
+  int responses = 0;
+  int pushes = 0;
+  s.on_response(
+      [&](CorrelationId, Outcome, std::span<const uint8_t>) { ++responses; });
+  s.on_push([&](Channel, const QueryResponse&, std::span<const uint8_t>) {
+    ++pushes;
+  });
+
+  // Registering for COHN status means the camera sends NotifyCOHNStatus
+  // unprompted, framed exactly like a reply. With a different request
+  // outstanding on the same feature, a one-byte correlation would hand the
+  // notification to that request and resolve it with the wrong message.
+  (void)s.submit_protobuf(Channel::kCommand, kFeatureCommand, kCreateCohnCert,
+                          {}, Priority::kFastpass, 10);
+  feed_message(s, Channel::kCommand, {kFeatureCommand, 239, 0x08, 0x01}, 20);
+
+  check(responses == 0, "the notification did not resolve the pending request");
+  check(pushes == 1, "it was reported as a push");
+}
+
 void test_unmatched_is_a_push() {
   std::printf("unmatched messages are pushes\n");
   Wire w;
@@ -340,6 +433,9 @@ int main() {
   test_channels_do_not_splice();
   test_correlation_is_per_channel();
   test_response_resolves_the_submitter();
+  test_protobuf_correlates_on_two_bytes();
+  test_protobuf_ids_do_not_collide_with_plain_ones();
+  test_protobuf_notification_is_a_push_not_a_response();
   test_unmatched_is_a_push();
   test_mtu_changes_fragment_count();
   test_disconnect_clears_everything();
