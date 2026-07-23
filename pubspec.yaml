@@ -24,6 +24,7 @@ dependencies:
   code_assets: ^1.0.0
   ffi: ^2.1.0
   hooks: ^2.1.0
+  protobuf: ^6.0.0
 
 dev_dependencies:
   lints: ^4.0.0
