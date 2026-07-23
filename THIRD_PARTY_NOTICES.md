@@ -67,6 +67,7 @@ Redistributed verbatim:
 tool/upstream/settings.py
 tool/upstream/statuses.py
 tool/upstream/constants.py
+tool/upstream/streaming.py
 tool/upstream/uuids.py
 tool/upstream/LICENSE.gopro
 ```
@@ -77,6 +78,7 @@ Derived from those files by `tool/gen_constants.py`:
 lib/src/generated/settings.dart
 lib/src/generated/statuses.dart
 lib/src/generated/constants.dart
+lib/src/generated/streaming.dart
 ```
 
 The generated Dart files are a derivative work: the enumerator names and
