@@ -270,7 +270,12 @@ class GoProBleTransport {
         final chars = device == null
             ? const <BlueZGattCharacteristic>[]
             : device.gattCharacteristics.toList();
-        if (device != null && device.connected && writes.isEmpty) {
+        // Re-scan until all six are found, not just until the first one is.
+        // The objects appear on D-Bus a few at a time, so a scan that catches
+        // a partial set has to be repeated or the rest are never picked up.
+        if (device != null &&
+            device.connected &&
+            !_complete(writes, notifies)) {
           _locate(chars, writes, notifies);
         }
 
@@ -284,9 +289,7 @@ class GoProBleTransport {
             // Count what is exposed. BlueZ has been observed reporting
             // ServicesResolved true while exposing nothing.
             attributeCount: chars.length,
-            controlCharsFound:
-                writes.length == _characteristics.length &&
-                notifies.length == _characteristics.length,
+            controlCharsFound: _complete(writes, notifies),
             notifySucceeded: notifySucceeded,
             // Count the characteristics actually notifying. Taking one
             // successful StartNotify as proof of all three would reach ready
@@ -334,6 +337,13 @@ class GoProBleTransport {
       rethrow;
     }
   }
+
+  bool _complete(
+    Map<BleChannel, BlueZGattCharacteristic> writes,
+    Map<BleChannel, BlueZGattCharacteristic> notifies,
+  ) =>
+      writes.length == _characteristics.length &&
+      notifies.length == _characteristics.length;
 
   void _locate(
     List<BlueZGattCharacteristic> chars,
