@@ -232,7 +232,8 @@ class Discovery {
 
   [[nodiscard]] std::vector<Camera> enumerate();
 
-  [[nodiscard]] bool hotplug_supported() const;
+  // Static: libusb reports this per platform, not per context.
+  [[nodiscard]] static bool hotplug_supported();
 
   // Registers for arrive/leave. Returns false if hotplug is unsupported on
   // this platform/libusb build.

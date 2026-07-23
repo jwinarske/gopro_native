@@ -47,6 +47,10 @@ bool CommandQueue::can_send(const Entry& e) const {
   if (is_in_flight(e.id))
     return false;
 
+  // kKeepAlive and kFastpass both return true here, but for unrelated
+  // reasons. Merging the cases would discard the distinction the comments
+  // carry, and the two diverge as soon as either rule changes.
+  // NOLINTBEGIN(bugprone-branch-clone)
   switch (e.priority) {
     case Priority::kKeepAlive:
       // Never gated. Starving this is what kills the connection.
@@ -63,6 +67,7 @@ bool CommandQueue::can_send(const Entry& e) const {
           in_flight_.begin(), in_flight_.end(),
           [](const Entry& f) { return f.priority == Priority::kQueued; });
   }
+  // NOLINTEND(bugprone-branch-clone)
   return false;
 }
 
@@ -178,6 +183,7 @@ void CommandQueue::tick(uint64_t now_ms) {
 
 void CommandQueue::cancel_all() {
   std::vector<CompletionFn> canceled;
+  canceled.reserve(in_flight_.size() + pending_.size());
   for (auto& e : in_flight_)
     canceled.push_back(std::move(e.done));
   for (auto& e : pending_)

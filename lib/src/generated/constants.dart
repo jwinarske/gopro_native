@@ -15,10 +15,13 @@
 enum ErrorCode {
   /// Upstream name: `SUCCESS`
   success(0),
+
   /// Upstream name: `ERROR`
   error(1),
+
   /// Upstream name: `INVALID_PARAM`
   invalidParam(2),
+
   /// Upstream name: `UNKNOWN`
   unknown(-1);
 
@@ -43,54 +46,79 @@ enum ErrorCode {
 enum CmdId {
   /// Upstream name: `SET_SHUTTER`
   setShutter(1),
+
   /// Upstream name: `POWER_DOWN`
   powerDown(4),
+
   /// Upstream name: `SLEEP`
   sleep(5),
+
   /// Upstream name: `SET_PAIRING_COMPLETE`
   setPairingComplete(3),
+
   /// Upstream name: `SET_DATE_TIME`
   setDateTime(13),
+
   /// Upstream name: `GET_DATE_TIME`
   getDateTime(14),
+
   /// Upstream name: `SET_DATE_TIME_DST`
   setDateTimeDst(15),
+
   /// Upstream name: `GET_DATE_TIME_DST`
   getDateTimeDst(16),
+
   /// Upstream name: `REBOOT`
   reboot(17),
+
   /// Upstream name: `GET_CAMERA_SETTINGS`
   getCameraSettings(18),
+
   /// Upstream name: `GET_CAMERA_STATUSES`
   getCameraStatuses(19),
+
   /// Upstream name: `GET_CAMERA_CAPABILITIES`
   getCameraCapabilities(50),
+
   /// Upstream name: `SET_WIFI`
   setWifi(23),
+
   /// Upstream name: `TAG_HILIGHT`
   tagHilight(24),
+
   /// Upstream name: `GET_SETTINGS_JSON`
   getSettingsJson(59),
+
   /// Upstream name: `GET_HW_INFO`
   getHwInfo(60),
+
   /// Upstream name: `LOAD_PRESET_GROUP`
   loadPresetGroup(62),
+
   /// Upstream name: `LOAD_PRESET`
   loadPreset(64),
+
   /// Upstream name: `SET_THIRD_PARTY_CLIENT_INFO`
   setThirdPartyClientInfo(80),
+
   /// Upstream name: `GET_THIRD_PARTY_API_VERSION`
   getThirdPartyApiVersion(81),
+
   /// Upstream name: `REGISTER_ALL_SETTINGS`
   registerAllSettings(82),
+
   /// Upstream name: `REGISTER_ALL_STATUSES`
   registerAllStatuses(83),
+
   /// Upstream name: `UNREGISTER_ALL_SETTINGS`
   unregisterAllSettings(114),
+
   /// Upstream name: `UNREGISTER_ALL_STATUSES`
   unregisterAllStatuses(115),
+
   /// Upstream name: `REGISTER_ALL_CAPABILITIES`
   registerAllCapabilities(98),
+
   /// Upstream name: `UNREGISTER_ALL_CAPABILITIES`
   unregisterAllCapabilities(130);
 
@@ -115,92 +143,136 @@ enum CmdId {
 enum ActionId {
   /// Upstream name: `SET_PAIRING_STATE`
   setPairingState(1),
+
   /// Upstream name: `SCAN_WIFI_NETWORKS`
   scanWifiNetworks(2),
+
   /// Upstream name: `GET_AP_ENTRIES`
   getApEntries(3),
+
   /// Upstream name: `REQUEST_WIFI_CONNECT`
   requestWifiConnect(4),
+
   /// Upstream name: `REQUEST_WIFI_CONNECT_NEW`
   requestWifiConnectNew(5),
+
   /// Upstream name: `NOTIF_START_SCAN`
   notifStartScan(11),
+
   /// Upstream name: `NOTIF_PROVIS_STATE`
   notifProvisState(12),
+
   /// Upstream name: `REQUEST_SET_CAMERA_NAME`
   requestSetCameraName(98),
+
   /// Upstream name: `REQUEST_SET_PRESET_VISIBILITY`
   requestSetPresetVisibility(99),
+
   /// Upstream name: `REQUEST_PRESET_UPDATE_CUSTOM`
   requestPresetUpdateCustom(100),
+
   /// Upstream name: `SET_CAMERA_CONTROL`
   setCameraControl(105),
+
   /// Upstream name: `SET_TURBO_MODE`
   setTurboMode(107),
+
   /// Upstream name: `GET_PRESET_STATUS`
   getPresetStatus(114),
+
   /// Upstream name: `GET_LIVESTREAM_STATUS`
   getLivestreamStatus(116),
+
   /// Upstream name: `RELEASE_NETWORK`
   releaseNetwork(120),
+
   /// Upstream name: `SET_LIVESTREAM_MODE`
   setLivestreamMode(121),
+
   /// Upstream name: `SET_PAIRING_STATE_RSP`
   setPairingStateRsp(129),
+
   /// Upstream name: `SCAN_WIFI_NETWORKS_RSP`
   scanWifiNetworksRsp(130),
+
   /// Upstream name: `GET_AP_ENTRIES_RSP`
   getApEntriesRsp(131),
+
   /// Upstream name: `REQUEST_WIFI_CONNECT_RSP`
   requestWifiConnectRsp(132),
+
   /// Upstream name: `REQUEST_WIFI_CONNECT_NEW_RSP`
   requestWifiConnectNewRsp(133),
+
   /// Upstream name: `REQUEST_COHN_SETTING`
   requestCohnSetting(101),
+
   /// Upstream name: `REQUEST_CLEAR_COHN_CERT`
   requestClearCohnCert(102),
+
   /// Upstream name: `REQUEST_CREATE_COHN_CERT`
   requestCreateCohnCert(103),
+
   /// Upstream name: `REQUEST_GET_LAST_MEDIA`
   requestGetLastMedia(109),
+
   /// Upstream name: `REQUEST_GET_COHN_CERT`
   requestGetCohnCert(110),
+
   /// Upstream name: `REQUEST_GET_COHN_STATUS`
   requestGetCohnStatus(111),
+
   /// Upstream name: `RESPONSE_SET_CAMERA_NAME`
   responseSetCameraName(226),
+
   /// Upstream name: `RESPONSE_SET_PRESET_VISIBILITY`
   responseSetPresetVisibility(227),
+
   /// Upstream name: `RESPONSE_PRESET_UPDATE_CUSTOM`
   responsePresetUpdateCustom(228),
+
   /// Upstream name: `RESPONSE_COHN_SETTING`
   responseCohnSetting(229),
+
   /// Upstream name: `RESPONSE_CLEAR_COHN_CERT`
   responseClearCohnCert(230),
+
   /// Upstream name: `RESPONSE_CREATE_COHN_CERT`
   responseCreateCohnCert(231),
+
   /// Upstream name: `SET_CAMERA_CONTROL_RSP`
   setCameraControlRsp(233),
+
   /// Upstream name: `SET_TURBO_MODE_RSP`
   setTurboModeRsp(235),
+
   /// Upstream name: `RESPONSE_GET_LAST_MEDIA`
   responseGetLastMedia(237),
+
   /// Upstream name: `RESPONSE_GET_COHN_CERT`
   responseGetCohnCert(238),
+
   /// Upstream name: `RESPONSE_GET_COHN_STATUS`
   responseGetCohnStatus(239),
+
   /// Upstream name: `GET_PRESET_STATUS_RSP`
   getPresetStatusRsp(242),
+
   /// Upstream name: `PRESET_MODIFIED_NOTIFICATION`
   presetModifiedNotification(243),
+
   /// Upstream name: `LIVESTREAM_STATUS_RSP`
   livestreamStatusRsp(244),
+
   /// Upstream name: `LIVESTREAM_STATUS_NOTIF`
   livestreamStatusNotif(245),
+
   /// Upstream name: `RELEASE_NETWORK_RSP`
   releaseNetworkRsp(248),
+
   /// Upstream name: `SET_LIVESTREAM_MODE_RSP`
   setLivestreamModeRsp(249),
+
   /// Upstream name: `INTERNAL_FF`
   internalFf(255);
 
@@ -225,12 +297,16 @@ enum ActionId {
 enum FeatureId {
   /// Upstream name: `NETWORK_MANAGEMENT`
   networkManagement(2),
+
   /// Upstream name: `WIRELESS_MANAGEMENT`
   wirelessManagement(3),
+
   /// Upstream name: `COMMAND`
   command(241),
+
   /// Upstream name: `SETTING`
   setting(243),
+
   /// Upstream name: `QUERY`
   query(245);
 
@@ -255,30 +331,43 @@ enum FeatureId {
 enum QueryCmdId {
   /// Upstream name: `GET_SETTING_VAL`
   getSettingVal(18),
+
   /// Upstream name: `GET_STATUS_VAL`
   getStatusVal(19),
+
   /// Upstream name: `GET_SETTING_NAME`
   getSettingName(34),
+
   /// Upstream name: `GET_CAPABILITIES_VAL`
   getCapabilitiesVal(50),
+
   /// Upstream name: `GET_CAPABILITIES_NAME`
   getCapabilitiesName(66),
+
   /// Upstream name: `REG_SETTING_VAL_UPDATE`
   regSettingValUpdate(82),
+
   /// Upstream name: `REG_STATUS_VAL_UPDATE`
   regStatusValUpdate(83),
+
   /// Upstream name: `REG_CAPABILITIES_UPDATE`
   regCapabilitiesUpdate(98),
+
   /// Upstream name: `UNREG_SETTING_VAL_UPDATE`
   unregSettingValUpdate(114),
+
   /// Upstream name: `UNREG_STATUS_VAL_UPDATE`
   unregStatusValUpdate(115),
+
   /// Upstream name: `UNREG_CAPABILITIES_UPDATE`
   unregCapabilitiesUpdate(130),
+
   /// Upstream name: `SETTING_VAL_PUSH`
   settingValPush(146),
+
   /// Upstream name: `STATUS_VAL_PUSH`
   statusValPush(147),
+
   /// Upstream name: `SETTING_CAPABILITY_PUSH`
   settingCapabilityPush(162);
 
@@ -303,6 +392,7 @@ enum QueryCmdId {
 enum Toggle {
   /// Upstream name: `ENABLE`
   enable(1),
+
   /// Upstream name: `DISABLE`
   disable(0);
 
@@ -351,8 +441,10 @@ enum LedSpecial {
 enum CameraControl {
   /// Upstream name: `IDLE`
   idle(0),
+
   /// Upstream name: `CAMERA`
   camera(1),
+
   /// Upstream name: `EXTERNAL`
   external$(2);
 

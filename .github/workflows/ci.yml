@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Formatting ────────────────────────────────────────────────────────────
+  format:
+    name: Format check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with: { sdk: stable }
+      - run: dart format --set-exit-if-changed lib/ test/ example/ hook/
+      - name: clang-format
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends clang-format
+          # Vendored Dart API headers and dart_api_dl.c are upstream artifacts
+          # and must stay byte-identical to the SDK they came from.
+          find native/src native/include \
+              \( -name '*.cpp' -o -name '*.h' \) \
+              ! -path '*/internal/*' \
+              ! -name 'dart_api*.h' \
+              ! -name 'dart_native_api.h' \
+              ! -name 'dart_version.h' \
+              ! -name 'glaze_meta.h' \
+              -print0 | xargs -0 clang-format --dry-run -Werror
+
+  # ── Dart static analysis ─────────────────────────────────────────────────
+  analyze:
+    name: Dart analyze
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with: { sdk: stable }
+      - name: Install deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build pkg-config libusb-1.0-0-dev
+      - run: dart pub get
+      - run: dart analyze --fatal-infos
+
+  # ── Dart tests (the build hook compiles the native library) ──────────────
+  test-dart:
+    name: Dart tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with: { sdk: stable }
+      - name: Install deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build pkg-config libusb-1.0-0-dev
+      - run: dart pub get
+      - run: dart test
+
+  # ── Native build and unit tests ──────────────────────────────────────────
+  test-cpp:
+    name: C++ unit tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build pkg-config libusb-1.0-0-dev
+      - name: Build and test
+        run: |
+          cmake -S native -B build -GNinja \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DBUILD_TESTING=ON \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic -Werror"
+          cmake --build build
+          ctest --test-dir build --output-on-failure
+
+  # ── clang-tidy ───────────────────────────────────────────────────────────
+  clang-tidy:
+    name: clang-tidy
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build pkg-config libusb-1.0-0-dev clang-tidy
+      - name: Build for compile_commands.json
+        run: |
+          cmake -S native -B build -GNinja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake --build build
+      - run: ./scripts/clang_tidy.sh build
+
+  # ── Generated sources match their input ──────────────────────────────────
+  codegen:
+    name: Generated constants up to date
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.x' }
+      # Regenerating by hand and forgetting to commit leaves the checked-in
+      # constants silently disagreeing with tool/upstream.
+      - run: tool/gen_constants.py --check
+
+  # ── The enumerate-only invariant ─────────────────────────────────────────
+  invariant:
+    name: Enumerate-only invariant
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      # Claiming a USB interface detaches cdc_ncm and destroys the netdev the
+      # HTTP control API rides on. Checked here as well as in the build so a
+      # violation is reported even if the build is skipped.
+      - run: cmake -DSRC_DIR=native/src -P cmake/check_no_claim.cmake
