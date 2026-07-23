@@ -472,6 +472,53 @@ accepting commands rather than a gate nobody opened.
 `connect()` now issues that query as soon as the link is up. If you build a
 session by another route, issue it yourself.
 
+## Joining the camera to a network
+
+The other direction from the access point: there the host joins the camera,
+here the camera joins a network the host already knows about. COHN needs this
+before it can be provisioned, and livestreaming needs it before there is a
+route to a server.
+
+```dart
+final net = NetworkClient(camera);
+net.provisioningStates.listen(print);
+
+final scan = await net.scan();                 // waits for the notification
+for (final ap in await net.accessPoints(scan)) print(ap);
+
+await net.connect('home');                     // already provisioned
+await net.connectNew('home', passphrase);      // first time
+```
+
+**Network management lives on its own characteristic pair.** `b5f90091` and
+`b5f90092`, on the Camera Management service — not the Control & Query
+command channel the rest of the protocol uses. Sent on the command
+characteristic, every camera tested answers a bare `[feature][0x02]` and
+nothing else, whatever the action:
+
+```
+scan(2)             -> PUSH command: 02 02
+apEntries(3)        -> PUSH command: 02 02
+setPairingState(1)  -> PUSH command: 02 02
+```
+
+The second byte does not track the action, so it is a constant error rather
+than an echo — which is what distinguishes "wrong channel" from "wrong
+action id" and is worth knowing before guessing at either.
+
+That pair is treated as **optional**. A camera not exposing the Camera
+Management service is still fully usable for everything else, so it is
+located and subscribed when present but does not gate reaching ready.
+
+**Scanning is asynchronous** in a way nothing else in the protocol is. The
+request returns "scanning started" immediately and the results arrive later
+as an unprompted notification carrying a scan id. `scan()` subscribes before
+issuing the request, because a fast scan can finish before the reply is even
+delivered and a notification nobody is listening for is simply gone.
+
+`bypassEulaCheck` is surfaced rather than hardcoded true as the reference
+does — it changes what the camera will accept, and quietly.
+
 ## Livestream and webcam
 
 Neither puts a video frame through this process, and neither should. The
@@ -617,7 +664,13 @@ server, so that is not exercised.
 The webcam surface is unit tested only — it is USB-attached, and the camera
 that supports it was not attached when this was written.
 
-Not yet implemented: joining the camera to an existing network.
+Scanning is validated against a MAX2: six networks found across a 2.4 and 5
+GHz mix, decoded with signal strength, frequency and flags, through the
+notification path rather than a reply.
+
+Joining a network is not exercised — that needs credentials for a real
+network. Neither, consequently, is the COHN provisioning round trip that
+depends on it.
 
 ## License
 
