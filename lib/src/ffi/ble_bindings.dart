@@ -21,8 +21,8 @@ class BleBindings {
 
   static final _create = _lib
       .lookupFunction<
-        Pointer<Void> Function(Int64, Uint32, Uint32),
-        Pointer<Void> Function(int, int, int)
+        Pointer<Void> Function(Int64, Uint32, Uint32, Uint32),
+        Pointer<Void> Function(int, int, int, int)
       >('gopro_ble_create');
 
   static final _destroy = _lib
@@ -74,15 +74,22 @@ class BleBindings {
         int Function(Pointer<Void>)
       >('gopro_ble_ready');
 
+  /// Every duration may be zero to accept the native default. [writeTimeout]
+  /// bounds the wait for a response; [queueTimeout] bounds the wait before
+  /// that, while a command is held behind the ready gate.
   static Pointer<Void> create(
     int eventsPort, {
     Duration keepAlive = Duration.zero,
     Duration writeTimeout = Duration.zero,
-  }) => _create(
-    eventsPort,
-    keepAlive.inMilliseconds,
-    writeTimeout.inMilliseconds,
-  );
+    Duration queueTimeout = Duration.zero,
+  }) {
+    return _create(
+      eventsPort,
+      keepAlive.inMilliseconds,
+      writeTimeout.inMilliseconds,
+      queueTimeout.inMilliseconds,
+    );
+  }
 
   static void destroy(Pointer<Void> h) => _destroy(h);
   static void tick(Pointer<Void> h, int nowMs) => _tick(h, nowMs);
