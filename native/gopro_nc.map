@@ -26,6 +26,14 @@
     gopro_ble_set_att_payload;
     gopro_ble_disconnect;
     gopro_ble_ready;
+    gopro_link_create;
+    gopro_link_destroy;
+    gopro_link_update;
+    gopro_link_retry_at;
+    gopro_link_detail;
+    gopro_link_note_failure;
+    gopro_link_attempts;
+    gopro_link_reset;
     Dart_*;
   local:
     *;
