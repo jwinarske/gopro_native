@@ -53,7 +53,7 @@ class CohnHttp extends GoProHttp {
          // missing host rather than as whatever the TLS layer says about a
          // certificate it was never going to need.
          _baseUri(credentials, host),
-         headers: {'Authorization': credentials.basicAuth},
+         headers: {'Authorization': credentials.basicAuth.value},
          client: pinnedClient(credentials.certificate),
        );
 

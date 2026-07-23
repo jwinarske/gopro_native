@@ -14,11 +14,12 @@ import 'dart:io';
 
 import 'package:gopro_native/src/cohn/cohn_http.dart';
 import 'package:gopro_native/src/cohn/credentials.dart';
+import 'package:gopro_native/src/secret.dart';
 import 'package:test/test.dart';
 
 const _credentials = CohnCredentials(
   username: 'gopro',
-  password: 'hunter2',
+  password: Secret('hunter2'),
   certificate:
       '-----BEGIN CERTIFICATE-----\nnot a real one\n'
       '-----END CERTIFICATE-----\n',
@@ -46,7 +47,7 @@ void main() {
       final got = await store.read('C123');
       expect(got, isNotNull);
       expect(got!.username, 'gopro');
-      expect(got.password, 'hunter2');
+      expect(got.password.value, 'hunter2');
       expect(got.certificate, _credentials.certificate);
       expect(got.ipAddress, '192.168.1.50');
       expect(got.ssid, 'home');
@@ -133,9 +134,11 @@ void main() {
 
     test('basicAuth is the documented encoding', () {
       expect(
-        _credentials.basicAuth,
+        _credentials.basicAuth.value,
         'Basic ${base64Encode(utf8.encode('gopro:hunter2'))}',
       );
+      // The token is the password base64'd, so it redacts like one.
+      expect(_credentials.basicAuth.toString(), '<redacted>');
     });
   });
 
@@ -206,7 +209,7 @@ void main() {
     test('CohnHttp refuses to build without a host', () {
       const noAddress = CohnCredentials(
         username: 'u',
-        password: 'p',
+        password: Secret('p'),
         certificate: 'x',
       );
       expect(() => CohnHttp(noAddress), throwsA(isA<ArgumentError>()));

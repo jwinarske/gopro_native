@@ -9,6 +9,7 @@
 // both into a command string and running it with `shell=True` — is a command
 // injection where the attacker supplies the network name.
 
+import 'package:gopro_native/src/secret.dart';
 import 'package:gopro_native/src/wifi/wifi_controller.dart';
 import 'package:test/test.dart';
 
@@ -19,7 +20,10 @@ void main() {
     test('every value is its own argument', () {
       expect(
         nmcli.joinArgs(
-          const ApCredentials(ssid: 'GP12345678', password: 'abc-def-ghi'),
+          const ApCredentials(
+            ssid: 'GP12345678',
+            password: Secret('abc-def-ghi'),
+          ),
         ),
         ['device', 'wifi', 'connect', 'GP12345678', 'password', 'abc-def-ghi'],
       );
@@ -31,7 +35,7 @@ void main() {
       // name; interpolated into a shell string it is two commands.
       const hostile = ApCredentials(
         ssid: r'GP$(id > /tmp/pwned)',
-        password: r"a'; rm -rf ~; echo '",
+        password: Secret(r"a'; rm -rf ~; echo '"),
       );
       final args = nmcli.joinArgs(hostile);
 
@@ -40,22 +44,23 @@ void main() {
       // Nine words of shell syntax, still exactly six arguments.
       expect(args, hasLength(6));
       expect(args[3], hostile.ssid);
-      expect(args[5], hostile.password);
+      expect(args[5], hostile.password.value);
     });
 
     test('a timeout is passed as two arguments, not one', () {
       final args = const NmcliWifiController(
         timeout: Duration(seconds: 30),
-      ).joinArgs(const ApCredentials(ssid: 'GP1', password: 'p'));
+      ).joinArgs(const ApCredentials(ssid: 'GP1', password: Secret('p')));
       expect(args.take(2), ['--wait', '30']);
     });
 
     test('leaving names the connection', () {
-      expect(nmcli.leaveArgs(const ApCredentials(ssid: 'GP1', password: 'p')), [
-        'connection',
-        'down',
-        'GP1',
-      ]);
+      expect(
+        nmcli.leaveArgs(
+          const ApCredentials(ssid: 'GP1', password: Secret('p')),
+        ),
+        ['connection', 'down', 'GP1'],
+      );
     });
 
     test('a missing nmcli reports unavailable rather than throwing', () async {
@@ -66,14 +71,17 @@ void main() {
     test('running a missing nmcli is a WifiJoinException', () async {
       const missing = NmcliWifiController(executable: '/nonexistent/nmcli');
       await expectLater(
-        missing.join(const ApCredentials(ssid: 'GP1', password: 'p')),
+        missing.join(const ApCredentials(ssid: 'GP1', password: Secret('p'))),
         throwsA(isA<WifiJoinException>()),
       );
     });
   });
 
   group('manual controller', () {
-    const creds = ApCredentials(ssid: 'GP12345678', password: 'secret-pass');
+    const creds = ApCredentials(
+      ssid: 'GP12345678',
+      password: Secret('secret-pass'),
+    );
 
     test('throws with the instruction when nothing is configured', () async {
       await expectLater(
@@ -112,7 +120,10 @@ void main() {
   });
 
   test('credentials do not print the passphrase', () {
-    const creds = ApCredentials(ssid: 'GP12345678', password: 'secret-pass');
+    const creds = ApCredentials(
+      ssid: 'GP12345678',
+      password: Secret('secret-pass'),
+    );
     expect(creds.toString(), contains('GP12345678'));
     expect(creds.toString(), isNot(contains('secret-pass')));
   });
