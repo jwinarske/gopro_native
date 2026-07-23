@@ -16,13 +16,17 @@
 
 import 'dart:io';
 
+import '../secret.dart';
+
 /// The camera's access point, as advertised over BLE.
 class ApCredentials {
   const ApCredentials({required this.ssid, required this.password});
 
   /// Typically `GP` followed by the last digits of the serial.
   final String ssid;
-  final String password;
+
+  /// Typed so it cannot be interpolated by accident.
+  final Secret password;
 
   /// Omits the passphrase. It reaches logs otherwise.
   @override
@@ -127,7 +131,7 @@ class NmcliWifiController implements WifiController {
     'connect',
     credentials.ssid,
     'password',
-    credentials.password,
+    credentials.password.value,
   ];
 
   List<String> leaveArgs(ApCredentials credentials) => [
@@ -144,7 +148,7 @@ class NmcliWifiController implements WifiController {
         'nmcli could not join "${credentials.ssid}"',
         // nmcli echoes the arguments it was given on some errors, so the
         // output is scrubbed before it goes anywhere a human might paste it.
-        detail: _redact(r, credentials.password),
+        detail: _redact(r, credentials.password.value),
       );
     }
   }

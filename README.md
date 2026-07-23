@@ -639,6 +639,45 @@ behalf is not a library's call. It is also not a field in the vendored
 definitions for this API version, so asking for it raises rather than being
 quietly dropped.
 
+## Standing review gates
+
+Three failure modes that do not announce themselves, enforced by
+`tool/review_gates.py` in CI rather than written down and rediscovered.
+
+**`assert` is stripped in release *and* profile builds.** The reference uses
+it for control flow in library code — including the result checks on COHN
+certificate creation and access point enablement. Translated directly that
+yields a library which silently proceeds on failure in every shipped build
+and works correctly only in debug, which is the worst possible split because
+it passes every test run. The gate rejects `assert` anywhere in `lib/`.
+
+**Nothing may log credentials.** The reference has no redaction: `cmd()` logs
+its full command line including the Wi-Fi passphrase, and the COHN Basic
+token goes through the same logger. Credential-bearing declarations must be
+[`Secret`], which prints `<redacted>` and yields its contents only through
+`.value` — greppable in a way `$password` is not. The gate also rejects
+`.value` inside any string interpolation, and checks that `Secret.toString`
+still redacts.
+
+That is deliberately broader than matching names that look like secrets:
+`${creds.password.value}` is easy to match and `${p.value}` is the same leak
+inside a helper. There are zero `.value` interpolations in `lib/`, so the
+broad rule costs nothing. `CohnCredentials.basicAuth` builds its token from
+bytes rather than by interpolation, so `user:password` never exists as a
+plain Dart string.
+
+**`glz::meta` and `codec.dart` are one format written in two places.** Drift
+is silent corruption, not a compile error: fields land in the wrong variables
+and a misread length prefix becomes an absurd allocation. The gate checks
+that the frozen hand-encoded vectors in `test/codec_test.dart` are still
+there and that `readString` still bounds-checks its prefix. The vectors must
+be hand-written — vectors captured from live output drift along with the code
+they exist to catch, which is worse than none, because they report agreement
+between two things that changed together.
+
+Each gate is negative-tested: introducing the violation must make it fail.
+A gate that cannot fail is not a gate.
+
 ## Status
 
 Validated end to end against a GoPro MAX2 (`2672:0059`): enumeration,
