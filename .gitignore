@@ -9,3 +9,6 @@ compile_commands.json
 
 # clangd index
 .cache/
+
+# Python bytecode from the generators
+__pycache__/
