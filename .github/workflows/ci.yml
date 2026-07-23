@@ -131,6 +131,18 @@ jobs:
           dart pub global activate protoc_plugin
       - run: PATH="$HOME/.pub-cache/bin:$PATH" tool/gen_proto.py --check
 
+  # ── Standing review gates ────────────────────────────────────────────────
+  gates:
+    name: Review gates
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.x' }
+      # Three failure modes that do not announce themselves: a stripped
+      # assert, a logged credential, and codec field-order drift. See #7.
+      - run: tool/review_gates.py
+
   # ── The enumerate-only invariant ─────────────────────────────────────────
   invariant:
     name: Enumerate-only invariant

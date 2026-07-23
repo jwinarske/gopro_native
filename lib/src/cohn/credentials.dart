@@ -15,6 +15,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import '../secret.dart';
+
 /// Everything needed to reach a camera over COHN.
 class CohnCredentials {
   const CohnCredentials({
@@ -27,7 +29,10 @@ class CohnCredentials {
   });
 
   final String username;
-  final String password;
+
+  /// Typed so it cannot be interpolated by accident. Reading it takes
+  /// `.value`, which is greppable; `$password` yields `<redacted>`.
+  final Secret password;
 
   /// The camera's self-signed root certificate, PEM encoded.
   ///
@@ -40,12 +45,27 @@ class CohnCredentials {
   final String? macAddress;
 
   /// The `Authorization` header value.
-  String get basicAuth =>
-      'Basic ${base64Encode(utf8.encode('$username:$password'))}';
+  ///
+  /// A [Secret] because it is the password with one reversible transformation
+  /// applied — base64 is an encoding, not a protection, and anything logging
+  /// this has logged the credential.
+  ///
+  /// Assembled from bytes rather than by interpolation so `user:password`
+  /// never exists as a plain Dart String. That would be one more copy sitting
+  /// in memory for a heap dump to find, and it is the exact shape the
+  /// interpolation gate exists to reject.
+  Secret get basicAuth {
+    final raw = <int>[
+      ...utf8.encode(username),
+      0x3a, // ':'
+      ...utf8.encode(password.value),
+    ];
+    return Secret('Basic ${base64Encode(raw)}');
+  }
 
   Map<String, Object?> toJson() => {
     'username': username,
-    'password': password,
+    'password': password.value,
     'certificate': certificate,
     if (ipAddress != null) 'ipAddress': ipAddress,
     if (ssid != null) 'ssid': ssid,
@@ -54,7 +74,7 @@ class CohnCredentials {
 
   static CohnCredentials fromJson(Map<String, Object?> json) => CohnCredentials(
     username: json['username']! as String,
-    password: json['password']! as String,
+    password: Secret(json['password']! as String),
     certificate: json['certificate']! as String,
     ipAddress: json['ipAddress'] as String?,
     ssid: json['ssid'] as String?,
