@@ -7,7 +7,18 @@
 /// network transport the control API rides on.
 library gopro_native;
 
+export 'src/ble_transport.dart'
+    show GoProBleCamera, GoProBleException, GoProBleTransport;
 export 'src/discovery.dart' show GoProDiscovery;
+export 'src/ffi/ble_codec.dart'
+    show
+        BleChannel,
+        BleFrameError,
+        BleOutcome,
+        BlePriority,
+        BlePush,
+        BleResponse;
+export 'src/ffi/link_types.dart' show LinkAction, LinkState, StallReason;
 export 'src/ffi/types.dart' show GoProCamera, Readiness, SerialSource;
 
 // Generated from the Open GoPro Python SDK — see tool/gen_constants.py.

@@ -65,6 +65,58 @@ void test_ready_gate() {
   check(rec.sent_ids({1, 2}), "next released on response");
 }
 
+void test_gated_commands_do_not_wait_forever() {
+  std::printf("queue deadline\n");
+  Recorder rec;
+  CommandQueue::Options opts;
+  opts.write_timeout_ms = 5000;
+  opts.queue_timeout_ms = 20000;
+  CommandQueue q(rec.fn(), opts);
+
+  Outcome got = Outcome::kResponded;
+  int calls = 0;
+  auto done = [&](Outcome o, std::span<const uint8_t>) {
+    got = o;
+    ++calls;
+  };
+
+  // The gate starts shut, because both statuses are unknown until the camera
+  // reports them. A command submitted now is never transmitted, so the write
+  // timeout cannot apply to it -- it is the queue deadline or nothing.
+  q.submit(1, body(), Priority::kQueued, done, 0);
+  q.tick(5000);
+  check(calls == 0,
+        "not abandoned at the write timeout, having never been "
+        "written");
+  check(q.pending() == 1, "still waiting for the gate");
+
+  q.tick(20000);
+  check(calls == 1, "abandoned once the queue deadline passes");
+  check(got == Outcome::kTimedOut, "reported as a timeout");
+  check(q.pending() == 0, "and dropped");
+  check(rec.sent.empty(), "never reached the wire");
+
+  // Opening the gate in time must still win the race.
+  Recorder rec2;
+  CommandQueue q2(rec2.fn(), opts);
+  q2.submit(2, body(), Priority::kQueued, nullptr, 0);
+  q2.tick(19000);
+  q2.set_ready(true, 19000);
+  check(rec2.sent_ids({2}), "released rather than expired");
+  q2.tick(19500);
+  check(q2.in_flight() == 1, "the write timeout governs it from here");
+
+  // Zero restores the indefinite wait, for callers that would rather hold a
+  // command than lose it.
+  Recorder rec3;
+  CommandQueue::Options forever;
+  forever.queue_timeout_ms = 0;
+  CommandQueue q3(rec3.fn(), forever);
+  q3.submit(3, body(), Priority::kQueued, nullptr, 0);
+  q3.tick(10'000'000);
+  check(q3.pending() == 1, "zero disables the deadline");
+}
+
 void test_keep_alive_is_never_blocked() {
   std::printf("keep-alive starvation (the bug)\n");
   Recorder rec;
@@ -251,6 +303,7 @@ void test_completion_can_resubmit() {
 
 int main() {
   test_ready_gate();
+  test_gated_commands_do_not_wait_forever();
   test_keep_alive_is_never_blocked();
   test_keep_alive_jumps_the_queue();
   test_fastpass();

@@ -29,6 +29,9 @@ surface on the wired path.
 | `hook/build.dart` | drives CMake, emits the `.so` as a `CodeAsset` |
 | `lib/src/ffi/codec.dart` | binary payload decode |
 | `lib/src/discovery.dart` | `Stream<GoProCamera>` public API |
+| `native/src/ble_session.cpp` | BLE framing, correlation, ready gate |
+| `native/src/ble_link.cpp` | BLE bring-up state machine |
+| `lib/src/ble_transport.dart` | GATT over D-Bus, the only BlueZ-facing code |
 
 Events are posted from a native worker thread via `Dart_PostCObject_DL`,
 which is thread-safe and callable from any thread. Dart never pumps anything.
@@ -238,17 +241,55 @@ Backoff is exponential and capped, and any forward progress resets it — a
 reconnect after a working session should not inherit the penalty accumulated
 before it succeeded.
 
+## BLE transport
+
+`lib/src/ble_transport.dart` is the only part of the BLE stack that talks to
+D-Bus. It owns the GATT connection and nothing else: it reports what it can
+see, performs the writes the session asks for, and feeds notifications back
+in. What those observations mean, and what to send, stays native.
+
+```dart
+final transport = await GoProBleTransport.start();
+final camera = await transport.connect();
+
+final busy = await camera.queryStatuses([8, 10]);
+camera.readyChanges.listen((open) => print('ready gate ${open ? 'open' : 'shut'}'));
+camera.pushes.listen(print);
+camera.faults.listen(print);   // optional; why a command went unanswered
+```
+
+`connect()` walks the ladder above, and a failure throws a
+`GoProBleException` naming the stage it stalled at with the machine's
+explanation — "the camera is asleep" and "the LE link is not encrypted"
+require completely different responses.
+
+Two rules the transport has to observe:
+
+- **Count the characteristics that are actually notifying.** Taking one
+  successful `StartNotify` as proof of all three reaches ready with two
+  channels deaf, and every reply then goes missing with no error anywhere.
+- **Queries are not gated.** The ready gate comes from the busy and encoding
+  statuses, both of which start unknown, so gating queries leaves the only
+  thing that can open the gate waiting behind it. `send()` therefore defaults
+  to fastpass on the query channel. The camera answers queries while it
+  records, which is the same reason stated from the camera's side.
+
 ## Status
 
 Validated end to end against a GoPro MAX2 (`2672:0059`): enumeration,
 hotplug arrival and departure, readiness staging, the rename diagnostic,
 event delivery into Dart, and an HTTP round-trip to the camera.
 
-Generated constants cover 477 settings, 175 statuses and 100 protocol
-constants (`tool/gen_constants.py`). BLE framing is implemented and tested.
+The BLE control plane is validated against the same camera: bring-up through
+to ready, subscription to all three notify characteristics, fragmentation and
+reassembly at the negotiated 517-byte MTU, correlation and response routing,
+the ready gate deriving from a status query, and teardown.
 
-Not yet implemented: the Open GoPro HTTP command surface, BLE transport
-wiring (GATT, keep-alive, the ready-gate command queue), and COHN.
+Generated constants cover 477 settings, 175 statuses and 100 protocol
+constants (`tool/gen_constants.py`).
+
+Not yet implemented: the Open GoPro HTTP command surface, the protobuf layer,
+and COHN.
 
 ## License
 
