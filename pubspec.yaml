@@ -15,9 +15,15 @@ platforms:
   linux:
 
 dependencies:
+  # Not on pub.dev, so pinned by commit rather than tag: the git-dependency
+  # build fix landed after v0.3.0, and a branch ref would move underneath us.
+  bluez_native:
+    git:
+      url: https://github.com/jwinarske/bluez_native.git
+      ref: 3c5a189d54ec0d43aae0a826b3efa5d5d4f9553f
   code_assets: ^1.0.0
   ffi: ^2.1.0
-  hooks: ^1.0.2
+  hooks: ^2.1.0
 
 dev_dependencies:
   lints: ^4.0.0

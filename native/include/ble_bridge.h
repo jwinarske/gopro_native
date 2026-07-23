@@ -52,11 +52,17 @@ enum GoProBleEvent {
   kGoProBleFrameError = 0x14,
 };
 
-/// Creates a session. `keep_alive_ms` and `write_timeout_ms` may be zero to
-/// accept the defaults. Returns null only on allocation failure.
+/// Creates a session. Any interval may be zero to accept the default.
+/// Returns null only on allocation failure.
+///
+/// `write_timeout_ms` bounds the wait for a response once a command has been
+/// transmitted. `queue_timeout_ms` bounds the wait before that, while a
+/// command is held behind the ready gate; the two are separate because a
+/// command that has not been sent is not late in the same sense.
 GOPRO_EXPORT void* gopro_ble_create(int64_t events_port,
                                     uint32_t keep_alive_ms,
-                                    uint32_t write_timeout_ms);
+                                    uint32_t write_timeout_ms,
+                                    uint32_t queue_timeout_ms);
 
 GOPRO_EXPORT void gopro_ble_destroy(void* handle);
 

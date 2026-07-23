@@ -121,6 +121,7 @@ bool CommandQueue::submit(CorrelationId id,
   e.payload = std::move(payload);
   e.priority = priority;
   e.done = std::move(done);
+  e.queued_at_ms = now_ms;
 
   // Keep-alive jumps the queue. Waiting behind ordinary commands that are
   // themselves waiting on the ready gate is exactly the starvation this class
@@ -173,6 +174,21 @@ void CommandQueue::tick(uint64_t now_ms) {
       ++it;
     }
   }
+
+  // A command still waiting for the ready gate has never been transmitted, so
+  // the write timeout does not apply to it. Give up on it separately rather
+  // than leaving the caller waiting on a gate that may never open.
+  if (opts_.queue_timeout_ms != 0) {
+    for (auto it = pending_.begin(); it != pending_.end();) {
+      if (now_ms - it->queued_at_ms >= opts_.queue_timeout_ms) {
+        expired.push_back(std::move(it->done));
+        it = pending_.erase(it);
+      } else {
+        ++it;
+      }
+    }
+  }
+
   for (auto& done : expired) {
     if (done)
       done(Outcome::kTimedOut, {});
