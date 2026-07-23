@@ -478,10 +478,53 @@ class GoProBleTransport {
   static Future<GoProBleTransport> start() async {
     final client = BlueZClient();
     await client.connect();
-    return GoProBleTransport._(client);
+    final t = GoProBleTransport._(client);
+    t._registerAgent();
+    return t;
   }
 
-  Future<void> close() async => _client.close();
+  Future<void> close() async {
+    await _agent?.cancel();
+    _agent = null;
+    try {
+      _client.unregisterAgent();
+    } on BlueZException {
+      // Already gone, or the bus went away first.
+    }
+    await _client.close();
+  }
+
+  StreamSubscription<BlueZAgentRequest>? _agent;
+
+  /// The device bring-up is currently pairing with, or null.
+  ///
+  /// Pairing requests for anything else are refused. An agent that accepts
+  /// everything will bond this host to whatever asks while it happens to be
+  /// running.
+  String? _pairing;
+
+  /// Registers a pairing agent.
+  ///
+  /// Without one BlueZ cannot complete pairing at all: `Device.Pair` returns
+  /// but the bond never forms, discovery still works, and `StartNotify` then
+  /// returns success while `Notifying` stays false. Nothing in that sequence
+  /// mentions pairing, which is what makes it worth stating here.
+  ///
+  /// The cameras use Just Works, so there is nothing to display or confirm —
+  /// the agent exists to answer at all, not to ask the user anything.
+  void _registerAgent() {
+    try {
+      _client.registerAgent();
+    } on BlueZException {
+      // Another agent already holds the bus name. Pairing will still work if
+      // that agent answers; bring-up reports the stall if it does not.
+      return;
+    }
+    _agent = _client.agentRequest.listen((r) {
+      final ours = _pairing != null && r.devicePath == _pairing;
+      _client.agentRespond(r.requestId, accepted: ours);
+    });
+  }
 
   /// The LE object for a camera, or null.
   ///
@@ -551,9 +594,17 @@ class GoProBleTransport {
   /// [reconnectTimeout] per attempt; the camera reports it on
   /// [GoProBleCamera.linkChanges]. Zero disables that, and a drop then closes
   /// the camera instead.
+  /// [timeout] must exceed the state machine's own stage budget or the
+  /// machine never gets to diagnose anything. Its stages are sequential and
+  /// total 95 s at the defaults — 10 s to connect, 15 s for services, 60 s
+  /// to encrypt, 10 s to subscribe. A 60 s deadline here expires at the same
+  /// instant the encrypt stage would have reported `notEncrypted`, so the
+  /// caller gets "timed out during bring-up" instead of "the LE link is not
+  /// encrypted, put the camera in pairing mode" — which is the one thing
+  /// they needed to know.
   Future<GoProBleCamera> connect({
     String? address,
-    Duration timeout = const Duration(seconds: 60),
+    Duration timeout = const Duration(seconds: 120),
     Duration keepAlive = Duration.zero,
     Duration reconnectTimeout = const Duration(minutes: 5),
   }) async {
@@ -677,13 +728,37 @@ class GoProBleTransport {
       last?.stall ?? StallReason.noAdvertisement,
       last?.detail.isNotEmpty == true
           ? last!.detail
-          : 'timed out during bring-up',
+          : _timedOutAt(last?.state ?? LinkState.absent),
     );
   }
 
   /// Whether the required three pairs are located. The optional Camera
   /// Management pair is deliberately not counted: waiting for a service the
   /// camera may not have would stall bring-up forever.
+  /// What a bare timeout means, by the stage it reached.
+  ///
+  /// Only used when the machine has not declared a stall of its own — which
+  /// happens when this deadline is shorter than the stage's. The stage
+  /// reached is still the diagnosis; saying only "timed out" throws it away.
+  static String _timedOutAt(LinkState state) => switch (state) {
+    LinkState.absent =>
+      'Nothing advertising the Control & Query service. The camera is asleep, '
+          'powered off, or has wireless disabled.',
+    LinkState.advertising =>
+      'The camera is advertising but would not accept a connection. Another '
+          'host may already be connected to it.',
+    LinkState.connected =>
+      'Connected, but the camera never exposed its GATT services.',
+    LinkState.servicesResolved =>
+      'Connected and enumerated, but the link never became encrypted. The LE '
+          'bond is missing or stale: remove the pairing on this host, put the '
+          'camera into pairing mode, and try again.',
+    LinkState.encrypted =>
+      'Encrypted, but not every Control & Query characteristic could be '
+          'subscribed.',
+    LinkState.ready => 'Reached ready but bring-up did not complete.',
+  };
+
   bool _complete(
     Map<BleChannel, BlueZGattCharacteristic> writes,
     Map<BleChannel, BlueZGattCharacteristic> notifies,
@@ -788,7 +863,14 @@ class GoProBleTransport {
         case LinkAction.pair:
           // Discovery works unbonded but notifications are refused, so an LE
           // bond is required before any control traffic.
-          if (device != null && !device.paired) await device.pair();
+          if (device != null && !device.paired) {
+            _pairing = device.objectPath;
+            try {
+              await device.pair();
+            } finally {
+              _pairing = null;
+            }
+          }
           // Proof of encryption is a StartNotify that succeeds, not a flag.
           await _subscribe(notifies, subscribed, only: 1);
 
