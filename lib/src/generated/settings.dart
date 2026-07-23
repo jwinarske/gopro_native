@@ -15,112 +15,166 @@
 enum SettingId {
   /// Upstream name: `VIDEO_RESOLUTION`
   videoResolution(2),
+
   /// Upstream name: `FRAMES_PER_SECOND`
   framesPerSecond(3),
+
   /// Upstream name: `VIDEO_TIMELAPSE_RATE`
   videoTimelapseRate(5),
+
   /// Upstream name: `PHOTO_TIMELAPSE_RATE`
   photoTimelapseRate(30),
+
   /// Upstream name: `NIGHTLAPSE_RATE`
   nightlapseRate(32),
+
   /// Upstream name: `WEBCAM_DIGITAL_LENSES`
   webcamDigitalLenses(43),
+
   /// Upstream name: `AUTO_POWER_DOWN`
   autoPowerDown(59),
+
   /// Upstream name: `GPS`
   gps(83),
+
   /// Upstream name: `LCD_BRIGHTNESS`
   lcdBrightness(88),
+
   /// Upstream name: `LED`
   led(91),
+
   /// Upstream name: `VIDEO_ASPECT_RATIO`
   videoAspectRatio(108),
+
   /// Upstream name: `VIDEO_LENS`
   videoLens(121),
+
   /// Upstream name: `PHOTO_LENS`
   photoLens(122),
+
   /// Upstream name: `TIME_LAPSE_DIGITAL_LENSES`
   timeLapseDigitalLenses(123),
+
   /// Upstream name: `PHOTO_OUTPUT`
   photoOutput(125),
+
   /// Upstream name: `MEDIA_FORMAT`
   mediaFormat(128),
+
   /// Upstream name: `ANTI_FLICKER`
   antiFlicker(134),
+
   /// Upstream name: `HYPERSMOOTH`
   hypersmooth(135),
+
   /// Upstream name: `VIDEO_HORIZON_LEVELING`
   videoHorizonLeveling(150),
+
   /// Upstream name: `PHOTO_HORIZON_LEVELING`
   photoHorizonLeveling(151),
+
   /// Upstream name: `VIDEO_DURATION`
   videoDuration(156),
+
   /// Upstream name: `MULTI_SHOT_DURATION`
   multiShotDuration(157),
+
   /// Upstream name: `MAX_LENS`
   maxLens(162),
+
   /// Upstream name: `HINDSIGHT`
   hindsight(167),
+
   /// Upstream name: `SCHEDULED_CAPTURE`
   scheduledCapture(168),
+
   /// Upstream name: `PHOTO_SINGLE_INTERVAL`
   photoSingleInterval(171),
+
   /// Upstream name: `PHOTO_INTERVAL_DURATION`
   photoIntervalDuration(172),
+
   /// Upstream name: `VIDEO_PERFORMANCE_MODE`
   videoPerformanceMode(173),
+
   /// Upstream name: `CONTROL_MODE`
   controlMode(175),
+
   /// Upstream name: `EASY_MODE_SPEED`
   easyModeSpeed(176),
+
   /// Upstream name: `ENABLE_NIGHT_PHOTO`
   enableNightPhoto(177),
+
   /// Upstream name: `WIRELESS_BAND`
   wirelessBand(178),
+
   /// Upstream name: `STAR_TRAILS_LENGTH`
   starTrailsLength(179),
+
   /// Upstream name: `SYSTEM_VIDEO_MODE`
   systemVideoMode(180),
+
   /// Upstream name: `VIDEO_BIT_RATE`
   videoBitRate(182),
+
   /// Upstream name: `BIT_DEPTH`
   bitDepth(183),
+
   /// Upstream name: `PROFILES`
   profiles(184),
+
   /// Upstream name: `VIDEO_EASY_MODE`
   videoEasyMode(186),
+
   /// Upstream name: `LAPSE_MODE`
   lapseMode(187),
+
   /// Upstream name: `MAX_LENS_MOD`
   maxLensMod(189),
+
   /// Upstream name: `MAX_LENS_MOD_ENABLE`
   maxLensModEnable(190),
+
   /// Upstream name: `EASY_NIGHT_PHOTO`
   easyNightPhoto(191),
+
   /// Upstream name: `MULTI_SHOT_ASPECT_RATIO`
   multiShotAspectRatio(192),
+
   /// Upstream name: `FRAMING`
   framing(193),
+
   /// Upstream name: `CAMERA_MODE`
   cameraMode(194),
+
   /// Upstream name: `NUM_360_PHOTO_FILES_EXTENSION`
   num360PhotoFilesExtension(196),
+
   /// Upstream name: `BEEP_VOLUME`
   beepVolume(216),
+
   /// Upstream name: `SETUP_SCREEN_SAVER`
   setupScreenSaver(219),
+
   /// Upstream name: `SETUP_LANGUAGE`
   setupLanguage(223),
+
   /// Upstream name: `PHOTO_MODE`
   photoMode(227),
+
   /// Upstream name: `VIDEO_FRAMING`
   videoFraming(232),
+
   /// Upstream name: `MULTI_SHOT_FRAMING`
   multiShotFraming(233),
+
   /// Upstream name: `FRAME_RATE`
   frameRate(234),
+
   /// Upstream name: `AUTOMATIC_WI_FI_ACCESS_POINT`
   automaticWiFiAccessPoint(236),
+
   /// Upstream name: `AUTO_POWER_ON_USB`
   autoPowerOnUsb(237);
 
@@ -145,56 +199,82 @@ enum SettingId {
 enum VideoResolution {
   /// Upstream name: `NUM_4K`
   num4K(1),
+
   /// Upstream name: `NUM_2_7K`
   num27K(4),
+
   /// Upstream name: `NUM_2_7K_4_3`
   num27K43(6),
+
   /// Upstream name: `NUM_1440`
   num1440(7),
+
   /// Upstream name: `NUM_1080`
   num1080(9),
+
   /// Upstream name: `NUM_720`
   num720(12),
+
   /// Upstream name: `NUM_4K_4_3`
   num4K43(18),
+
   /// Upstream name: `NUM_5_6K`
   num56K(21),
+
   /// Upstream name: `NUM_5K`
   num5K(24),
+
   /// Upstream name: `NUM_5K_4_3`
   num5K43(25),
+
   /// Upstream name: `NUM_5_3K_8_7`
   num53K87(26),
+
   /// Upstream name: `NUM_5_3K_4_3`
   num53K43(27),
+
   /// Upstream name: `NUM_4K_8_7`
   num4K87(28),
+
   /// Upstream name: `NUM_8K`
   num8K(31),
+
   /// Upstream name: `NUM_5_3K_21_9`
   num53K219(35),
+
   /// Upstream name: `NUM_4K_21_9`
   num4K219(36),
+
   /// Upstream name: `NUM_4K_1_1`
   num4K11(37),
+
   /// Upstream name: `NUM_900`
   num900(38),
+
   /// Upstream name: `NUM_4K_SPH`
   num4KSph(39),
+
   /// Upstream name: `NUM_5_3K`
   num53K(100),
+
   /// Upstream name: `NUM_5_3K_8_7_V2`
   num53K87V2(107),
+
   /// Upstream name: `NUM_4K_8_7_V2`
   num4K87V2(108),
+
   /// Upstream name: `NUM_4K_9_16_V2`
   num4K916V2(109),
+
   /// Upstream name: `NUM_1080_9_16_V2`
   num1080916V2(110),
+
   /// Upstream name: `NUM_2_7K_4_3_V2`
   num27K43V2(111),
+
   /// Upstream name: `NUM_4K_4_3_V2`
   num4K43V2(112),
+
   /// Upstream name: `NUM_5_3K_4_3_V2`
   num53K43V2(113);
 
@@ -219,28 +299,40 @@ enum VideoResolution {
 enum FramesPerSecond {
   /// Upstream name: `NUM_240_0`
   num2400(0),
+
   /// Upstream name: `NUM_120_0`
   num1200(1),
+
   /// Upstream name: `NUM_100_0`
   num1000(2),
+
   /// Upstream name: `NUM_90_0`
   num900(3),
+
   /// Upstream name: `NUM_60_0`
   num600(5),
+
   /// Upstream name: `NUM_50_0`
   num500(6),
+
   /// Upstream name: `NUM_30_0`
   num300(8),
+
   /// Upstream name: `NUM_25_0`
   num250(9),
+
   /// Upstream name: `NUM_24_0`
   num240(10),
+
   /// Upstream name: `NUM_200_0`
   num2000(13),
+
   /// Upstream name: `NUM_400_0`
   num4000(15),
+
   /// Upstream name: `NUM_360_0`
   num3600(16),
+
   /// Upstream name: `NUM_300_0`
   num3000(17);
 
@@ -265,26 +357,37 @@ enum FramesPerSecond {
 enum VideoTimelapseRate {
   /// Upstream name: `NUM_0_5_SECONDS`
   num05Seconds(0),
+
   /// Upstream name: `NUM_1_SECOND`
   num1Second(1),
+
   /// Upstream name: `NUM_2_SECONDS`
   num2Seconds(2),
+
   /// Upstream name: `NUM_5_SECONDS`
   num5Seconds(3),
+
   /// Upstream name: `NUM_10_SECONDS`
   num10Seconds(4),
+
   /// Upstream name: `NUM_30_SECONDS`
   num30Seconds(5),
+
   /// Upstream name: `NUM_60_SECONDS`
   num60Seconds(6),
+
   /// Upstream name: `NUM_2_MINUTES`
   num2Minutes(7),
+
   /// Upstream name: `NUM_5_MINUTES`
   num5Minutes(8),
+
   /// Upstream name: `NUM_30_MINUTES`
   num30Minutes(9),
+
   /// Upstream name: `NUM_60_MINUTES`
   num60Minutes(10),
+
   /// Upstream name: `NUM_3_SECONDS`
   num3Seconds(11);
 
@@ -309,26 +412,37 @@ enum VideoTimelapseRate {
 enum PhotoTimelapseRate {
   /// Upstream name: `NUM_3_SECONDS`
   num3Seconds(11),
+
   /// Upstream name: `NUM_60_MINUTES`
   num60Minutes(100),
+
   /// Upstream name: `NUM_30_MINUTES`
   num30Minutes(101),
+
   /// Upstream name: `NUM_5_MINUTES`
   num5Minutes(102),
+
   /// Upstream name: `NUM_2_MINUTES`
   num2Minutes(103),
+
   /// Upstream name: `NUM_60_SECONDS`
   num60Seconds(104),
+
   /// Upstream name: `NUM_30_SECONDS`
   num30Seconds(105),
+
   /// Upstream name: `NUM_10_SECONDS`
   num10Seconds(106),
+
   /// Upstream name: `NUM_5_SECONDS`
   num5Seconds(107),
+
   /// Upstream name: `NUM_2_SECONDS`
   num2Seconds(108),
+
   /// Upstream name: `NUM_1_SECOND`
   num1Second(109),
+
   /// Upstream name: `NUM_0_5_SECONDS`
   num05Seconds(110);
 
@@ -353,26 +467,37 @@ enum PhotoTimelapseRate {
 enum NightlapseRate {
   /// Upstream name: `NUM_4_SECONDS`
   num4Seconds(4),
+
   /// Upstream name: `NUM_5_SECONDS`
   num5Seconds(5),
+
   /// Upstream name: `NUM_10_SECONDS`
   num10Seconds(10),
+
   /// Upstream name: `NUM_15_SECONDS`
   num15Seconds(15),
+
   /// Upstream name: `NUM_20_SECONDS`
   num20Seconds(20),
+
   /// Upstream name: `NUM_30_SECONDS`
   num30Seconds(30),
+
   /// Upstream name: `NUM_60_SECONDS`
   num60Seconds(100),
+
   /// Upstream name: `NUM_2_MINUTES`
   num2Minutes(120),
+
   /// Upstream name: `NUM_5_MINUTES`
   num5Minutes(300),
+
   /// Upstream name: `NUM_30_MINUTES`
   num30Minutes(1800),
+
   /// Upstream name: `NUM_60_MINUTES`
   num60Minutes(3600),
+
   /// Upstream name: `AUTO`
   auto(3601);
 
@@ -397,10 +522,13 @@ enum NightlapseRate {
 enum WebcamDigitalLenses {
   /// Upstream name: `WIDE`
   wide(0),
+
   /// Upstream name: `NARROW`
   narrow(2),
+
   /// Upstream name: `SUPERVIEW`
   superview(3),
+
   /// Upstream name: `LINEAR`
   linear(4);
 
@@ -425,16 +553,22 @@ enum WebcamDigitalLenses {
 enum AutoPowerDown {
   /// Upstream name: `NEVER`
   never(0),
+
   /// Upstream name: `NUM_1_MIN`
   num1Min(1),
+
   /// Upstream name: `NUM_5_MIN`
   num5Min(4),
+
   /// Upstream name: `NUM_15_MIN`
   num15Min(6),
+
   /// Upstream name: `NUM_30_MIN`
   num30Min(7),
+
   /// Upstream name: `NUM_8_SECONDS`
   num8Seconds(11),
+
   /// Upstream name: `NUM_30_SECONDS`
   num30Seconds(12);
 
@@ -459,6 +593,7 @@ enum AutoPowerDown {
 enum Gps {
   /// Upstream name: `OFF`
   off(0),
+
   /// Upstream name: `ON`
   on$(1);
 
@@ -483,14 +618,19 @@ enum Gps {
 enum Led {
   /// Upstream name: `OFF`
   off(0),
+
   /// Upstream name: `ON`
   on$(2),
+
   /// Upstream name: `ALL_ON`
   allOn(3),
+
   /// Upstream name: `ALL_OFF`
   allOff(4),
+
   /// Upstream name: `FRONT_OFF_ONLY`
   frontOffOnly(5),
+
   /// Upstream name: `BACK_ONLY`
   backOnly(100);
 
@@ -515,14 +655,19 @@ enum Led {
 enum VideoAspectRatio {
   /// Upstream name: `NUM_4_3`
   num43(0),
+
   /// Upstream name: `NUM_16_9`
   num169(1),
+
   /// Upstream name: `NUM_8_7`
   num87(3),
+
   /// Upstream name: `NUM_9_16`
   num916(4),
+
   /// Upstream name: `NUM_21_9`
   num219(5),
+
   /// Upstream name: `NUM_1_1`
   num11(6);
 
@@ -547,28 +692,40 @@ enum VideoAspectRatio {
 enum VideoLens {
   /// Upstream name: `WIDE`
   wide(0),
+
   /// Upstream name: `NARROW`
   narrow(2),
+
   /// Upstream name: `SUPERVIEW`
   superview(3),
+
   /// Upstream name: `LINEAR`
   linear(4),
+
   /// Upstream name: `MAX_SUPERVIEW`
   maxSuperview(7),
+
   /// Upstream name: `LINEAR_HORIZON_LEVELING`
   linearHorizonLeveling(8),
+
   /// Upstream name: `HYPERVIEW`
   hyperview(9),
+
   /// Upstream name: `LINEAR_HORIZON_LOCK`
   linearHorizonLock(10),
+
   /// Upstream name: `MAX_HYPERVIEW`
   maxHyperview(11),
+
   /// Upstream name: `ULTRA_SUPERVIEW`
   ultraSuperview(12),
+
   /// Upstream name: `ULTRA_WIDE`
   ultraWide(13),
+
   /// Upstream name: `ULTRA_LINEAR`
   ultraLinear(14),
+
   /// Upstream name: `ULTRA_HYPERVIEW`
   ultraHyperview(104);
 
@@ -593,36 +750,52 @@ enum VideoLens {
 enum PhotoLens {
   /// Upstream name: `WIDE_12_MP`
   wide12Mp(0),
+
   /// Upstream name: `LINEAR_12_MP`
   linear12Mp(10),
+
   /// Upstream name: `NUM_9MP_WIDE`
   num9MpWide(15),
+
   /// Upstream name: `NARROW`
   narrow(19),
+
   /// Upstream name: `WIDE_23_MP`
   wide23Mp(27),
+
   /// Upstream name: `LINEAR_23_MP`
   linear23Mp(28),
+
   /// Upstream name: `WIDE_27_MP`
   wide27Mp(31),
+
   /// Upstream name: `LINEAR_27_MP`
   linear27Mp(32),
+
   /// Upstream name: `NUM_9MP_LINEAR`
   num9MpLinear(37),
+
   /// Upstream name: `NUM_13MP_LINEAR`
   num13MpLinear(38),
+
   /// Upstream name: `NUM_13MP_WIDE`
   num13MpWide(39),
+
   /// Upstream name: `NUM_13MP_ULTRA_WIDE`
   num13MpUltraWide(40),
+
   /// Upstream name: `ULTRA_WIDE_12_MP`
   ultraWide12Mp(41),
+
   /// Upstream name: `NUM_13MP_ULTRA_LINEAR`
   num13MpUltraLinear(44),
+
   /// Upstream name: `MAX_SUPERVIEW`
   maxSuperview(100),
+
   /// Upstream name: `WIDE`
   wide(101),
+
   /// Upstream name: `LINEAR`
   linear(102);
 
@@ -647,14 +820,19 @@ enum PhotoLens {
 enum TimeLapseDigitalLenses {
   /// Upstream name: `NARROW`
   narrow(19),
+
   /// Upstream name: `WIDE_27_MP`
   wide27Mp(31),
+
   /// Upstream name: `LINEAR_27_MP`
   linear27Mp(32),
+
   /// Upstream name: `MAX_SUPERVIEW`
   maxSuperview(100),
+
   /// Upstream name: `WIDE`
   wide(101),
+
   /// Upstream name: `LINEAR`
   linear(102);
 
@@ -679,10 +857,13 @@ enum TimeLapseDigitalLenses {
 enum PhotoOutput {
   /// Upstream name: `STANDARD`
   standard(0),
+
   /// Upstream name: `RAW`
   raw(1),
+
   /// Upstream name: `HDR`
   hdr(2),
+
   /// Upstream name: `SUPERPHOTO`
   superphoto(3);
 
@@ -707,10 +888,13 @@ enum PhotoOutput {
 enum MediaFormat {
   /// Upstream name: `TIME_LAPSE_VIDEO`
   timeLapseVideo(13),
+
   /// Upstream name: `TIME_LAPSE_PHOTO`
   timeLapsePhoto(20),
+
   /// Upstream name: `NIGHT_LAPSE_PHOTO`
   nightLapsePhoto(21),
+
   /// Upstream name: `NIGHT_LAPSE_VIDEO`
   nightLapseVideo(26);
 
@@ -737,10 +921,13 @@ enum MediaFormat {
 enum AntiFlicker {
   /// Upstream name: `NTSC`
   ntsc(0),
+
   /// Upstream name: `PAL`
   pal(1),
+
   /// Upstream name: `NUM_60HZ`
   num60Hz(2),
+
   /// Upstream name: `NUM_50HZ`
   num50Hz(3);
 
@@ -765,14 +952,19 @@ enum AntiFlicker {
 enum Hypersmooth {
   /// Upstream name: `OFF`
   off(0),
+
   /// Upstream name: `LOW`
   low(1),
+
   /// Upstream name: `HIGH`
   high(2),
+
   /// Upstream name: `BOOST`
   boost(3),
+
   /// Upstream name: `AUTO_BOOST`
   autoBoost(4),
+
   /// Upstream name: `STANDARD`
   standard(100);
 
@@ -797,6 +989,7 @@ enum Hypersmooth {
 enum VideoHorizonLeveling {
   /// Upstream name: `OFF`
   off(0),
+
   /// Upstream name: `LOCKED`
   locked(2);
 
@@ -821,6 +1014,7 @@ enum VideoHorizonLeveling {
 enum PhotoHorizonLeveling {
   /// Upstream name: `OFF`
   off(0),
+
   /// Upstream name: `LOCKED`
   locked(2);
 
@@ -845,24 +1039,34 @@ enum PhotoHorizonLeveling {
 enum VideoDuration {
   /// Upstream name: `NUM_15_SECONDS`
   num15Seconds(1),
+
   /// Upstream name: `NUM_30_SECONDS`
   num30Seconds(2),
+
   /// Upstream name: `NUM_1_MINUTE`
   num1Minute(3),
+
   /// Upstream name: `NUM_5_MINUTES`
   num5Minutes(4),
+
   /// Upstream name: `NUM_15_MINUTES`
   num15Minutes(5),
+
   /// Upstream name: `NUM_30_MINUTES`
   num30Minutes(6),
+
   /// Upstream name: `NUM_1_HOUR`
   num1Hour(7),
+
   /// Upstream name: `NUM_2_HOURS`
   num2Hours(8),
+
   /// Upstream name: `NUM_3_HOURS`
   num3Hours(9),
+
   /// Upstream name: `NUM_5_SECONDS`
   num5Seconds(10),
+
   /// Upstream name: `NO_LIMIT`
   noLimit(100);
 
@@ -887,24 +1091,34 @@ enum VideoDuration {
 enum MultiShotDuration {
   /// Upstream name: `OFF`
   off(0),
+
   /// Upstream name: `NUM_15_SECONDS`
   num15Seconds(1),
+
   /// Upstream name: `NUM_30_SECONDS`
   num30Seconds(2),
+
   /// Upstream name: `NUM_1_MINUTE`
   num1Minute(3),
+
   /// Upstream name: `NUM_5_MINUTES`
   num5Minutes(4),
+
   /// Upstream name: `NUM_15_MINUTES`
   num15Minutes(5),
+
   /// Upstream name: `NUM_30_MINUTES`
   num30Minutes(6),
+
   /// Upstream name: `NUM_1_HOUR`
   num1Hour(7),
+
   /// Upstream name: `NUM_2_HOURS`
   num2Hours(8),
+
   /// Upstream name: `NUM_3_HOURS`
   num3Hours(9),
+
   /// Upstream name: `NO_LIMIT`
   noLimit(100);
 
@@ -929,6 +1143,7 @@ enum MultiShotDuration {
 enum MaxLens {
   /// Upstream name: `OFF`
   off(0),
+
   /// Upstream name: `ON`
   on$(1);
 
@@ -953,8 +1168,10 @@ enum MaxLens {
 enum Hindsight {
   /// Upstream name: `NUM_15_SECONDS`
   num15Seconds(2),
+
   /// Upstream name: `NUM_30_SECONDS`
   num30Seconds(3),
+
   /// Upstream name: `OFF`
   off(4);
 
@@ -979,22 +1196,31 @@ enum Hindsight {
 enum PhotoSingleInterval {
   /// Upstream name: `OFF`
   off(0),
+
   /// Upstream name: `NUM_0_5S`
   num05S(2),
+
   /// Upstream name: `NUM_1S`
   num1S(3),
+
   /// Upstream name: `NUM_2S`
   num2S(4),
+
   /// Upstream name: `NUM_5S`
   num5S(5),
+
   /// Upstream name: `NUM_10S`
   num10S(6),
+
   /// Upstream name: `NUM_30S`
   num30S(7),
+
   /// Upstream name: `NUM_60S`
   num60S(8),
+
   /// Upstream name: `NUM_120S`
   num120S(9),
+
   /// Upstream name: `NUM_3S`
   num3S(10);
 
@@ -1019,22 +1245,31 @@ enum PhotoSingleInterval {
 enum PhotoIntervalDuration {
   /// Upstream name: `OFF`
   off(0),
+
   /// Upstream name: `NUM_15_SECONDS`
   num15Seconds(1),
+
   /// Upstream name: `NUM_30_SECONDS`
   num30Seconds(2),
+
   /// Upstream name: `NUM_1_MINUTE`
   num1Minute(3),
+
   /// Upstream name: `NUM_5_MINUTES`
   num5Minutes(4),
+
   /// Upstream name: `NUM_15_MINUTES`
   num15Minutes(5),
+
   /// Upstream name: `NUM_30_MINUTES`
   num30Minutes(6),
+
   /// Upstream name: `NUM_1_HOUR`
   num1Hour(7),
+
   /// Upstream name: `NUM_2_HOURS`
   num2Hours(8),
+
   /// Upstream name: `NUM_3_HOURS`
   num3Hours(9);
 
@@ -1059,8 +1294,10 @@ enum PhotoIntervalDuration {
 enum VideoPerformanceMode {
   /// Upstream name: `MAXIMUM_VIDEO_PERFORMANCE`
   maximumVideoPerformance(0),
+
   /// Upstream name: `EXTENDED_BATTERY`
   extendedBattery(1),
+
   /// Upstream name: `TRIPOD_STATIONARY_VIDEO`
   tripodStationaryVideo(2);
 
@@ -1085,6 +1322,7 @@ enum VideoPerformanceMode {
 enum ControlMode {
   /// Upstream name: `EASY`
   easy(0),
+
   /// Upstream name: `PRO`
   pro(1);
 
@@ -1109,178 +1347,265 @@ enum ControlMode {
 enum EasyModeSpeed {
   /// Upstream name: `NUM_8X_ULTRA_SLO_MO`
   num8XUltraSloMo(0),
+
   /// Upstream name: `NUM_4X_SUPER_SLO_MO`
   num4XSuperSloMo(1),
+
   /// Upstream name: `NUM_2X_SLO_MO`
   num2XSloMo(2),
+
   /// Upstream name: `NUM_1X_SPEED_LOW_LIGHT_`
   num1XSpeedLowLight(3),
+
   /// Upstream name: `NUM_4X_SUPER_SLO_MO_EXT_BATT_`
   num4XSuperSloMoExtBatt(4),
+
   /// Upstream name: `NUM_2X_SLO_MO_EXT_BATT_`
   num2XSloMoExtBatt(5),
+
   /// Upstream name: `NUM_1X_SPEED_EXT_BATT_LOW_LIGHT_`
   num1XSpeedExtBattLowLight(6),
+
   /// Upstream name: `NUM_8X_ULTRA_SLO_MO_50HZ_`
   num8XUltraSloMo50Hz(7),
+
   /// Upstream name: `NUM_4X_SUPER_SLO_MO_50HZ_`
   num4XSuperSloMo50Hz(8),
+
   /// Upstream name: `NUM_2X_SLO_MO_50HZ_`
   num2XSloMo50Hz(9),
+
   /// Upstream name: `NUM_1X_SPEED_50HZ_LOW_LIGHT_`
   num1XSpeed50HzLowLight(10),
+
   /// Upstream name: `NUM_4X_SUPER_SLO_MO_50HZ_EXT_BATT_`
   num4XSuperSloMo50HzExtBatt(11),
+
   /// Upstream name: `NUM_2X_SLO_MO_50HZ_EXT_BATT_`
   num2XSloMo50HzExtBatt(12),
+
   /// Upstream name: `NUM_1X_SPEED_50HZ_EXT_BATT_LOW_LIGHT_`
   num1XSpeed50HzExtBattLowLight(13),
+
   /// Upstream name: `NUM_8X_ULTRA_SLO_MO_EXT_BATT_`
   num8XUltraSloMoExtBatt(14),
+
   /// Upstream name: `NUM_8X_ULTRA_SLO_MO_50HZ_EXT_BATT_`
   num8XUltraSloMo50HzExtBatt(15),
+
   /// Upstream name: `NUM_8X_ULTRA_SLO_MO_LONG_BATT_`
   num8XUltraSloMoLongBatt(16),
+
   /// Upstream name: `NUM_4X_SUPER_SLO_MO_LONG_BATT_`
   num4XSuperSloMoLongBatt(17),
+
   /// Upstream name: `NUM_2X_SLO_MO_LONG_BATT_`
   num2XSloMoLongBatt(18),
+
   /// Upstream name: `NUM_1X_SPEED_LONG_BATT_LOW_LIGHT_`
   num1XSpeedLongBattLowLight(19),
+
   /// Upstream name: `NUM_8X_ULTRA_SLO_MO_50HZ_LONG_BATT_`
   num8XUltraSloMo50HzLongBatt(20),
+
   /// Upstream name: `NUM_4X_SUPER_SLO_MO_50HZ_LONG_BATT_`
   num4XSuperSloMo50HzLongBatt(21),
+
   /// Upstream name: `NUM_2X_SLO_MO_50HZ_LONG_BATT_`
   num2XSloMo50HzLongBatt(22),
+
   /// Upstream name: `NUM_1X_SPEED_50HZ_LONG_BATT_LOW_LIGHT_`
   num1XSpeed50HzLongBattLowLight(23),
+
   /// Upstream name: `NUM_2X_SLO_MO_4K_`
   num2XSloMo4K(24),
+
   /// Upstream name: `NUM_4X_SUPER_SLO_MO_2_7K_`
   num4XSuperSloMo27K(25),
+
   /// Upstream name: `NUM_2X_SLO_MO_4K_50HZ_`
   num2XSloMo4K50Hz(26),
+
   /// Upstream name: `NUM_4X_SUPER_SLO_MO_2_7K_50HZ_`
   num4XSuperSloMo27K50Hz(27),
+
   /// Upstream name: `NUM_8X_ULTRA_SLO_MO_V2_`
   num8XUltraSloMoV2(100),
+
   /// Upstream name: `NUM_4X_SUPER_SLO_MO_V2_`
   num4XSuperSloMoV2(101),
+
   /// Upstream name: `NUM_2X_SLO_MO_V2_`
   num2XSloMoV2(102),
+
   /// Upstream name: `NUM_1X_SPEED_LOW_LIGHT_V2_`
   num1XSpeedLowLightV2(103),
+
   /// Upstream name: `NUM_8X_ULTRA_SLO_MO_50HZ_V2_`
   num8XUltraSloMo50HzV2(104),
+
   /// Upstream name: `NUM_4X_SUPER_SLO_MO_50HZ_V2_`
   num4XSuperSloMo50HzV2(105),
+
   /// Upstream name: `NUM_2X_SLO_MO_50HZ_V2_`
   num2XSloMo50HzV2(106),
+
   /// Upstream name: `NUM_1X_SPEED_50HZ_LOW_LIGHT_V2_`
   num1XSpeed50HzLowLightV2(107),
+
   /// Upstream name: `NUM_8X_ULTRA_SLO_MO_LONG_BATT_V2_`
   num8XUltraSloMoLongBattV2(108),
+
   /// Upstream name: `NUM_4X_SUPER_SLO_MO_LONG_BATT_V2_`
   num4XSuperSloMoLongBattV2(109),
+
   /// Upstream name: `NUM_2X_SLO_MO_LONG_BATT_V2_`
   num2XSloMoLongBattV2(110),
+
   /// Upstream name: `NUM_1X_SPEED_LONG_BATT_LOW_LIGHT_V2_`
   num1XSpeedLongBattLowLightV2(111),
+
   /// Upstream name: `NUM_8X_ULTRA_SLO_MO_50HZ_LONG_BATT_V2_`
   num8XUltraSloMo50HzLongBattV2(112),
+
   /// Upstream name: `NUM_4X_SUPER_SLO_MO_50HZ_LONG_BATT_V2_`
   num4XSuperSloMo50HzLongBattV2(113),
+
   /// Upstream name: `NUM_2X_SLO_MO_50HZ_LONG_BATT_V2_`
   num2XSloMo50HzLongBattV2(114),
+
   /// Upstream name: `NUM_1X_SPEED_50HZ_LONG_BATT_LOW_LIGHT_V2_`
   num1XSpeed50HzLongBattLowLightV2(115),
+
   /// Upstream name: `NUM_2X_SLO_MO_4K_V2_`
   num2XSloMo4KV2(116),
+
   /// Upstream name: `NUM_2X_SLO_MO_4K_50HZ_V2_`
   num2XSloMo4K50HzV2(117),
+
   /// Upstream name: `NUM_1X_SPEED_LOW_LIGHT_V2_VERTICAL_`
   num1XSpeedLowLightV2Vertical(118),
+
   /// Upstream name: `NUM_1X_SPEED_50HZ_LOW_LIGHT_V2_VERTICAL_`
   num1XSpeed50HzLowLightV2Vertical(119),
+
   /// Upstream name: `NUM_2X_SLO_MO_V2_VERTICAL_`
   num2XSloMoV2Vertical(120),
+
   /// Upstream name: `NUM_2X_SLO_MO_50HZ_V2_VERTICAL_`
   num2XSloMo50HzV2Vertical(121),
+
   /// Upstream name: `NUM_1X_SPEED_FULL_FRAME_LOW_LIGHT_V2_`
   num1XSpeedFullFrameLowLightV2(122),
+
   /// Upstream name: `NUM_1X_SPEED_50HZ_FULL_FRAME_LOW_LIGHT_V2_`
   num1XSpeed50HzFullFrameLowLightV2(123),
+
   /// Upstream name: `NUM_2X_SLO_MO_FULL_FRAME_V2_`
   num2XSloMoFullFrameV2(124),
+
   /// Upstream name: `NUM_2X_SLO_MO_50HZ_FULL_FRAME_V2_`
   num2XSloMo50HzFullFrameV2(125),
+
   /// Upstream name: `NUM_1X_SPEED_4K_LOW_LIGHT_V2_`
   num1XSpeed4KLowLightV2(126),
+
   /// Upstream name: `NUM_1X_SPEED_4K_50HZ_LOW_LIGHT_V2_`
   num1XSpeed4K50HzLowLightV2(127),
+
   /// Upstream name: `NUM_1X_SPEED_2_7K_LOW_LIGHT_V2_`
   num1XSpeed27KLowLightV2(128),
+
   /// Upstream name: `NUM_1X_SPEED_2_7K_50HZ_LOW_LIGHT_V2_`
   num1XSpeed27K50HzLowLightV2(129),
+
   /// Upstream name: `NUM_2X_SLO_MO_2_7K_V2_`
   num2XSloMo27KV2(130),
+
   /// Upstream name: `NUM_2X_SLO_MO_2_7K_50HZ_V2_`
   num2XSloMo27K50HzV2(131),
+
   /// Upstream name: `NUM_2X_SLO_MO_LONG_BATT_V2_VERTICAL_`
   num2XSloMoLongBattV2Vertical(132),
+
   /// Upstream name: `NUM_2X_SLO_MO_50HZ_LONG_BATT_V2_VERTICAL_`
   num2XSloMo50HzLongBattV2Vertical(133),
+
   /// Upstream name: `NUM_1X_SPEED_LONG_BATT_LOW_LIGHT_V2_VERTICAL_`
   num1XSpeedLongBattLowLightV2Vertical(134),
+
   /// Upstream name: `NUM_1X_SPEED_50HZ_LONG_BATT_LOW_LIGHT_V2_VERTICAL_`
   num1XSpeed50HzLongBattLowLightV2Vertical(135),
+
   /// Upstream name: `NUM_1X_SPEED_4K_FULL_FRAME_LOW_LIGHT_V2_`
   num1XSpeed4KFullFrameLowLightV2(136),
+
   /// Upstream name: `NUM_1X_SPEED_4K_50HZ_FULL_FRAME_LOW_LIGHT_V2_`
   num1XSpeed4K50HzFullFrameLowLightV2(137),
+
   /// Upstream name: `NUM_1X_NORMAL_SPEED_1_1_30_FPS_4K_V2_`
   num1XNormalSpeed1130Fps4KV2(138),
+
   /// Upstream name: `NUM_1X_NORMAL_SPEED_1_1_25_FPS_4K_V2_`
   num1XNormalSpeed1125Fps4KV2(139),
+
   /// Upstream name: `NUM_2X_SLO_MO_SPEED_1_1_4K_60_FPS_V2_`
   num2XSloMoSpeed114K60FpsV2(140),
+
   /// Upstream name: `NUM_2X_SLO_MO_SPEED_1_1_4K_50_FPS_V2_`
   num2XSloMoSpeed114K50FpsV2(141),
+
   /// Upstream name: `NUM_1X_NORMAL_SPEED_21_9_30_FPS_5_3K_V2_`
   num1XNormalSpeed21930Fps53KV2(142),
+
   /// Upstream name: `NUM_1X_NORMAL_SPEED_21_9_25_FPS_5_3K_V2_`
   num1XNormalSpeed21925Fps53KV2(143),
+
   /// Upstream name: `NUM_2X_SLO_MO_SPEED_21_9_5_3K_60_FPS_V2_`
   num2XSloMoSpeed21953K60FpsV2(144),
+
   /// Upstream name: `NUM_2X_SLO_MO_SPEED_21_9_5_3K_50_FPS_V2_`
   num2XSloMoSpeed21953K50FpsV2(145),
+
   /// Upstream name: `NUM_1X_NORMAL_SPEED_21_9_30_FPS_4K_V2_`
   num1XNormalSpeed21930Fps4KV2(146),
+
   /// Upstream name: `NUM_1X_NORMAL_SPEED_21_9_25_FPS_4K_V2_`
   num1XNormalSpeed21925Fps4KV2(147),
+
   /// Upstream name: `NUM_2X_SLO_MO_SPEED_21_9_4K_60_FPS_V2_`
   num2XSloMoSpeed2194K60FpsV2(148),
+
   /// Upstream name: `NUM_2X_SLO_MO_SPEED_21_9_4K_50_FPS_V2_`
   num2XSloMoSpeed2194K50FpsV2(149),
+
   /// Upstream name: `NUM_120_4X_SUPER_SLO_MO_SPEED_21_9_4K_V2_`
   num1204XSuperSloMoSpeed2194KV2(150),
+
   /// Upstream name: `NUM_100_4X_SUPER_SLO_MO_SPEED_21_9_4K_V2_`
   num1004XSuperSloMoSpeed2194KV2(151),
+
   /// Upstream name: `NUM_1X_NORMAL_SPEED_30_FPS_4_3_5_3K_V2_`
   num1XNormalSpeed30Fps4353KV2(152),
+
   /// Upstream name: `NUM_1X_NORMAL_SPEED_25_FPS_4_3_5_3K_V2_`
   num1XNormalSpeed25Fps4353KV2(153),
+
   /// Upstream name: `NUM_1X_NORMAL_SPEED_30_FPS_4_3_4K_V2_`
   num1XNormalSpeed30Fps434KV2(154),
+
   /// Upstream name: `NUM_1X_NORMAL_SPEED_25_FPS_4_3_4K_V2_`
   num1XNormalSpeed25Fps434KV2(155),
+
   /// Upstream name: `NUM_2X_SLO_MO_SPEED_4_3_4K_60_FPS_V2_`
   num2XSloMoSpeed434K60FpsV2(156),
+
   /// Upstream name: `NUM_2X_SLO_MO_SPEED_4_3_4K_50_FPS_V2_`
   num2XSloMoSpeed434K50FpsV2(157),
+
   /// Upstream name: `NUM_120_4X_SUPER_SLO_MO_SPEED_2_7K_4_3_V2_`
   num1204XSuperSloMoSpeed27K43V2(158),
+
   /// Upstream name: `NUM_100_4X_SUPER_SLO_MO_SPEED_2_7K_4_3_V2_`
   num1004XSuperSloMoSpeed27K43V2(159);
 
@@ -1305,6 +1630,7 @@ enum EasyModeSpeed {
 enum EnableNightPhoto {
   /// Upstream name: `OFF`
   off(0),
+
   /// Upstream name: `ON`
   on$(1);
 
@@ -1331,6 +1657,7 @@ enum EnableNightPhoto {
 enum WirelessBandSetting {
   /// Upstream name: `NUM_2_4GHZ`
   num24Ghz(0),
+
   /// Upstream name: `NUM_5GHZ`
   num5Ghz(1);
 
@@ -1355,8 +1682,10 @@ enum WirelessBandSetting {
 enum StarTrailsLength {
   /// Upstream name: `SHORT`
   short(1),
+
   /// Upstream name: `LONG`
   long(2),
+
   /// Upstream name: `MAX`
   max(3);
 
@@ -1381,12 +1710,16 @@ enum StarTrailsLength {
 enum SystemVideoMode {
   /// Upstream name: `HIGHEST_QUALITY`
   highestQuality(0),
+
   /// Upstream name: `EXTENDED_BATTERY`
   extendedBattery(101),
+
   /// Upstream name: `LONGEST_BATTERY`
   longestBattery(102),
+
   /// Upstream name: `STANDARD_QUALITY`
   standardQuality(111),
+
   /// Upstream name: `BASIC_QUALITY`
   basicQuality(112);
 
@@ -1411,8 +1744,10 @@ enum SystemVideoMode {
 enum VideoBitRate {
   /// Upstream name: `STANDARD`
   standard(0),
+
   /// Upstream name: `HIGH`
   high(1),
+
   /// Upstream name: `MAX`
   max(2);
 
@@ -1437,6 +1772,7 @@ enum VideoBitRate {
 enum BitDepth {
   /// Upstream name: `NUM_8_BIT`
   num8Bit(0),
+
   /// Upstream name: `NUM_10_BIT`
   num10Bit(2);
 
@@ -1461,10 +1797,13 @@ enum BitDepth {
 enum Profiles {
   /// Upstream name: `STANDARD`
   standard(0),
+
   /// Upstream name: `HDR`
   hdr(1),
+
   /// Upstream name: `LOG`
   log(2),
+
   /// Upstream name: `HLG_HDR`
   hlgHdr(101);
 
@@ -1489,12 +1828,16 @@ enum Profiles {
 enum VideoEasyMode {
   /// Upstream name: `HIGHEST_QUALITY`
   highestQuality(0),
+
   /// Upstream name: `STANDARD_QUALITY`
   standardQuality(1),
+
   /// Upstream name: `BASIC_QUALITY`
   basicQuality(2),
+
   /// Upstream name: `STANDARD_VIDEO`
   standardVideo(3),
+
   /// Upstream name: `HDR_VIDEO`
   hdrVideo(4);
 
@@ -1519,22 +1862,31 @@ enum VideoEasyMode {
 enum LapseMode {
   /// Upstream name: `TIMEWARP`
   timewarp(0),
+
   /// Upstream name: `STAR_TRAILS`
   starTrails(1),
+
   /// Upstream name: `LIGHT_PAINTING`
   lightPainting(2),
+
   /// Upstream name: `VEHICLE_LIGHTS`
   vehicleLights(3),
+
   /// Upstream name: `MAX_TIMEWARP`
   maxTimewarp(4),
+
   /// Upstream name: `MAX_STAR_TRAILS`
   maxStarTrails(5),
+
   /// Upstream name: `MAX_LIGHT_PAINTING`
   maxLightPainting(6),
+
   /// Upstream name: `MAX_VEHICLE_LIGHTS`
   maxVehicleLights(7),
+
   /// Upstream name: `TIME_LAPSE_VIDEO`
   timeLapseVideo(8),
+
   /// Upstream name: `NIGHT_LAPSE_VIDEO`
   nightLapseVideo(9);
 
@@ -1559,26 +1911,37 @@ enum LapseMode {
 enum MaxLensMod {
   /// Upstream name: `NONE`
   none(0),
+
   /// Upstream name: `MAX_LENS_1_0`
   maxLens10(1),
+
   /// Upstream name: `MAX_LENS_2_0`
   maxLens20(2),
+
   /// Upstream name: `MAX_LENS_2_5`
   maxLens25(3),
+
   /// Upstream name: `MACRO`
   macro(4),
+
   /// Upstream name: `ANAMORPHIC`
   anamorphic(5),
+
   /// Upstream name: `ND_4`
   nd4(6),
+
   /// Upstream name: `ND_8`
   nd8(7),
+
   /// Upstream name: `ND_16`
   nd16(8),
+
   /// Upstream name: `ND_32`
   nd32(9),
+
   /// Upstream name: `STANDARD_LENS`
   standardLens(10),
+
   /// Upstream name: `AUTO_DETECT`
   autoDetect(100);
 
@@ -1603,6 +1966,7 @@ enum MaxLensMod {
 enum MaxLensModEnable {
   /// Upstream name: `OFF`
   off(0),
+
   /// Upstream name: `ON`
   on$(1);
 
@@ -1627,8 +1991,10 @@ enum MaxLensModEnable {
 enum EasyNightPhoto {
   /// Upstream name: `SUPER_PHOTO`
   superPhoto(0),
+
   /// Upstream name: `NIGHT_PHOTO`
   nightPhoto(1),
+
   /// Upstream name: `BURST`
   burst(2);
 
@@ -1653,10 +2019,13 @@ enum EasyNightPhoto {
 enum MultiShotAspectRatio {
   /// Upstream name: `NUM_4_3`
   num43(0),
+
   /// Upstream name: `NUM_16_9`
   num169(1),
+
   /// Upstream name: `NUM_8_7`
   num87(3),
+
   /// Upstream name: `NUM_9_16`
   num916(4);
 
@@ -1681,20 +2050,28 @@ enum MultiShotAspectRatio {
 enum Framing {
   /// Upstream name: `WIDESCREEN`
   widescreen(0),
+
   /// Upstream name: `VERTICAL`
   vertical(1),
+
   /// Upstream name: `FULL_FRAME`
   fullFrame(2),
+
   /// Upstream name: `TRADITIONAL_4_3_V2`
   traditional43V2(100),
+
   /// Upstream name: `WIDESCREEN_16_9_V2`
   widescreen169V2(101),
+
   /// Upstream name: `FULL_FRAME_8_7_V2`
   fullFrame87V2(103),
+
   /// Upstream name: `VERTICAL_9_16_V2`
   vertical916V2(104),
+
   /// Upstream name: `ULTRA_WIDESCREEN_21_9_V2`
   ultraWidescreen219V2(105),
+
   /// Upstream name: `FULL_FRAME_1_1_V2`
   fullFrame11V2(106);
 
@@ -1719,6 +2096,7 @@ enum Framing {
 enum CameraMode {
   /// Upstream name: `SINGLE_LENS`
   singleLens(0),
+
   /// Upstream name: `NUM_360_`
   num360(1);
 
@@ -1743,6 +2121,7 @@ enum CameraMode {
 enum NUM360PhotoFilesExtension {
   /// Upstream name: `NUM_JPG`
   numJpg(0),
+
   /// Upstream name: `NUM_36P`
   num36P(1);
 
@@ -1767,8 +2146,10 @@ enum NUM360PhotoFilesExtension {
 enum BeepVolume {
   /// Upstream name: `LOW`
   low(70),
+
   /// Upstream name: `MEDIUM`
   medium(85),
+
   /// Upstream name: `HIGH`
   high(100);
 
@@ -1793,12 +2174,16 @@ enum BeepVolume {
 enum SetupScreenSaver {
   /// Upstream name: `NEVER`
   never(0),
+
   /// Upstream name: `NUM_1_MIN`
   num1Min(1),
+
   /// Upstream name: `NUM_2_MIN`
   num2Min(2),
+
   /// Upstream name: `NUM_3_MIN`
   num3Min(3),
+
   /// Upstream name: `NUM_5_MIN`
   num5Min(4);
 
@@ -1823,32 +2208,46 @@ enum SetupScreenSaver {
 enum SetupLanguage {
   /// Upstream name: `ENGLISH_US`
   englishUs(0),
+
   /// Upstream name: `ENGLISH_UK`
   englishUk(1),
+
   /// Upstream name: `ENGLISH_AUS`
   englishAus(2),
+
   /// Upstream name: `GERMAN`
   german(3),
+
   /// Upstream name: `FRENCH`
   french(4),
+
   /// Upstream name: `ITALIAN`
   italian(5),
+
   /// Upstream name: `SPANISH`
   spanish(6),
+
   /// Upstream name: `SPANISH_NA`
   spanishNa(7),
+
   /// Upstream name: `CHINESE`
   chinese(8),
+
   /// Upstream name: `JAPANESE`
   japanese(9),
+
   /// Upstream name: `KOREAN`
   korean(10),
+
   /// Upstream name: `PORTUGUESE`
   portuguese(11),
+
   /// Upstream name: `RUSSIAN`
   russian(12),
+
   /// Upstream name: `ENGLISH_IND`
   englishInd(13),
+
   /// Upstream name: `SWEDISH`
   swedish(14);
 
@@ -1873,8 +2272,10 @@ enum SetupLanguage {
 enum PhotoMode {
   /// Upstream name: `SUPERPHOTO`
   superphoto(0),
+
   /// Upstream name: `NIGHT_PHOTO`
   nightPhoto(1),
+
   /// Upstream name: `BURST`
   burst(2);
 
@@ -1899,14 +2300,19 @@ enum PhotoMode {
 enum VideoFraming {
   /// Upstream name: `NUM_4_3`
   num43(0),
+
   /// Upstream name: `NUM_16_9`
   num169(1),
+
   /// Upstream name: `NUM_8_7`
   num87(3),
+
   /// Upstream name: `NUM_9_16`
   num916(4),
+
   /// Upstream name: `NUM_21_9`
   num219(5),
+
   /// Upstream name: `NUM_1_1`
   num11(6);
 
@@ -1931,10 +2337,13 @@ enum VideoFraming {
 enum MultiShotFraming {
   /// Upstream name: `NUM_4_3`
   num43(0),
+
   /// Upstream name: `NUM_16_9`
   num169(1),
+
   /// Upstream name: `NUM_8_7`
   num87(3),
+
   /// Upstream name: `NUM_9_16`
   num916(4);
 
@@ -1959,28 +2368,40 @@ enum MultiShotFraming {
 enum FrameRate {
   /// Upstream name: `NUM_240_0`
   num2400(0),
+
   /// Upstream name: `NUM_120_0`
   num1200(1),
+
   /// Upstream name: `NUM_100_0`
   num1000(2),
+
   /// Upstream name: `NUM_90_0`
   num900(3),
+
   /// Upstream name: `NUM_60_0`
   num600(5),
+
   /// Upstream name: `NUM_50_0`
   num500(6),
+
   /// Upstream name: `NUM_30_0`
   num300(8),
+
   /// Upstream name: `NUM_25_0`
   num250(9),
+
   /// Upstream name: `NUM_24_0`
   num240(10),
+
   /// Upstream name: `NUM_200_0`
   num2000(13),
+
   /// Upstream name: `NUM_400_0`
   num4000(15),
+
   /// Upstream name: `NUM_360_0`
   num3600(16),
+
   /// Upstream name: `NUM_300_0`
   num3000(17);
 
@@ -2007,6 +2428,7 @@ enum FrameRate {
 enum AutomaticWiFiAccessPoint {
   /// Upstream name: `OFF`
   off(0),
+
   /// Upstream name: `ON`
   on$(1);
 
@@ -2031,6 +2453,7 @@ enum AutomaticWiFiAccessPoint {
 enum AutoPowerOnUsb {
   /// Upstream name: `OFF`
   off(0),
+
   /// Upstream name: `ON`
   on$(1);
 

@@ -12,9 +12,10 @@ class GoProBindings {
   static final DynamicLibrary _lib = loadGoProNc();
 
   static final _init = _lib
-      .lookupFunction<Void Function(Pointer<Void>), void Function(Pointer<Void>)>(
-        'gopro_bridge_init',
-      );
+      .lookupFunction<
+        Void Function(Pointer<Void>),
+        void Function(Pointer<Void>)
+      >('gopro_bridge_init');
 
   static final _create = _lib
       .lookupFunction<
@@ -23,14 +24,16 @@ class GoProBindings {
       >('gopro_discovery_create');
 
   static final _destroy = _lib
-      .lookupFunction<Void Function(Pointer<Void>), void Function(Pointer<Void>)>(
-        'gopro_discovery_destroy',
-      );
+      .lookupFunction<
+        Void Function(Pointer<Void>),
+        void Function(Pointer<Void>)
+      >('gopro_discovery_destroy');
 
   static final _rescan = _lib
-      .lookupFunction<Void Function(Pointer<Void>), void Function(Pointer<Void>)>(
-        'gopro_discovery_rescan',
-      );
+      .lookupFunction<
+        Void Function(Pointer<Void>),
+        void Function(Pointer<Void>)
+      >('gopro_discovery_rescan');
 
   static final _setTimeout = _lib
       .lookupFunction<

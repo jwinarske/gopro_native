@@ -283,7 +283,7 @@ struct Discovery::Impl {
   std::unordered_map<std::string, Camera> cache;  // keyed by sysfs_name
 
   // Fills everything obtainable from a live libusb_device. Never claims.
-  Camera build(libusb_device* dev, bool readable) const;
+  static Camera build(libusb_device* dev, bool readable);
 
   // libusb C callback. A member so it can see this private nested type.
   static int LIBUSB_CALL trampoline(libusb_context* ctx,
@@ -315,7 +315,7 @@ Camera build_identity(libusb_device* dev) {
 
 }  // namespace
 
-Camera Discovery::Impl::build(libusb_device* dev, bool readable) const {
+Camera Discovery::Impl::build(libusb_device* dev, bool readable) {
   Camera c = build_identity(dev);
 
   if (!readable)
@@ -409,7 +409,7 @@ std::vector<Camera> Discovery::enumerate() {
       continue;
     if (desc.idVendor != impl_->vid)
       continue;
-    Camera c = impl_->build(list[i], /*readable=*/true);
+    Camera c = Impl::build(list[i], /*readable=*/true);
     {
       const std::lock_guard lk(impl_->cache_mu);
       impl_->cache[c.sysfs_name] = c;
@@ -421,7 +421,7 @@ std::vector<Camera> Discovery::enumerate() {
   return out;
 }
 
-bool Discovery::hotplug_supported() const {
+bool Discovery::hotplug_supported() {
   return libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG) != 0;
 }
 
@@ -433,7 +433,7 @@ int LIBUSB_CALL Discovery::Impl::trampoline(libusb_context* /*ctx*/,
   const bool arrived = (event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED);
 
   // On departure the device is gone: descriptors and open() are unavailable.
-  Camera c = impl->build(dev, /*readable=*/arrived);
+  Camera c = Impl::build(dev, /*readable=*/arrived);
 
   {
     const std::lock_guard lk(impl->cache_mu);

@@ -54,7 +54,9 @@ class GlazeCodec {
     if (data.isEmpty) return null;
     final kind = EventKind.fromByte(data[0]);
     if (kind == null) return null;
-    if (kind == EventKind.sentinel) return const CameraEvent(EventKind.sentinel, null);
+    if (kind == EventKind.sentinel) {
+      return const CameraEvent(EventKind.sentinel, null);
+    }
     return CameraEvent(kind, _readCamera(_Reader(data, 1)));
   }
 
@@ -86,8 +88,7 @@ class GlazeCodec {
 }
 
 class _Reader {
-  _Reader(this._data, this._offset)
-    : _view = ByteData.sublistView(_data);
+  _Reader(this._data, this._offset) : _view = ByteData.sublistView(_data);
 
   final Uint8List _data;
   final ByteData _view;
