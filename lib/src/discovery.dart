@@ -66,8 +66,6 @@ class GoProDiscovery {
     int vid = 0,
     Duration readinessTimeout = const Duration(seconds: 10),
   }) async {
-    GoProBindings.init();
-
     final port = ReceivePort();
     final handle = GoProBindings.create(port.sendPort.nativePort, vid);
     if (handle == nullptr) {

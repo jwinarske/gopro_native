@@ -43,16 +43,24 @@ class GoProBindings {
 
   static bool _initialized = false;
 
-  /// Idempotent — the native side tolerates repeat calls, but there is no
-  /// reason to pay for them.
+  /// Resolves `Dart_PostCObject_DL` and the rest of the DL API.
+  ///
+  /// Every handle that posts to a port must be created after this, and both
+  /// bridges in the library share the one table. Until it runs the function
+  /// pointers are null, so the first post jumps to address zero rather than
+  /// failing in any way that names the cause. Creation calls it rather than
+  /// trusting callers to, which is why this is idempotent.
   static void init() {
     if (_initialized) return;
     _init(NativeApi.initializeApiDLData);
     _initialized = true;
   }
 
-  static Pointer<Void> create(int eventsPort, int vid) =>
-      _create(eventsPort, vid);
+  static Pointer<Void> create(int eventsPort, int vid) {
+    init();
+    return _create(eventsPort, vid);
+  }
+
   static void destroy(Pointer<Void> h) => _destroy(h);
   static void rescan(Pointer<Void> h) => _rescan(h);
   static void setTimeout(Pointer<Void> h, int ms) => _setTimeout(h, ms);
