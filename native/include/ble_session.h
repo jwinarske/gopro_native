@@ -1,0 +1,166 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Joel Winarske
+//
+// ble_session.h — the BLE control plane, composed.
+//
+// Joins the four protocol pieces into one object: Reassembler per
+// characteristic, parse_query, ReadyState, and CommandQueue. The transport
+// lives in Dart, which owns the GATT connection and moves bytes; this owns
+// the protocol state and decides what to send.
+//
+//   notification bytes  ->  feed()  ->  reassemble  ->  parse  ->  ready gate
+//   submit()            ->  queue   ->  WriteFn     ->  transport writes
+//
+// Pure logic: no D-Bus, no threads, no clock. Time arrives as a parameter and
+// transmission goes out through a callback, so every ordering property is
+// testable without hardware.
+//
+// CORRELATION
+//
+// Responses carry no sequence number. What identifies them is the first byte
+// of the reassembled payload -- a command id, a query command id, or a
+// setting id -- which is only unique within a characteristic. A settings
+// response and a query response can both begin with 0x13 and mean unrelated
+// things. Correlation ids therefore combine the characteristic with that
+// byte, and CommandQueue's single-flight rule is what keeps two commands
+// sharing one id from stealing each other's reply.
+//
+// KEEP-ALIVE
+//
+// The camera drops the link after roughly ten seconds of silence. tick()
+// emits a keep-alive at a fixed interval, submitted at Priority::kKeepAlive
+// so it bypasses the ready gate. Keeping the timer here rather than in the
+// transport means the starvation behavior is testable: a keep-alive that
+// queues behind a busy camera is the failure this design exists to prevent.
+
+#pragma once
+
+#include <cstdint>
+#include <functional>
+#include <span>
+#include <string_view>
+#include <vector>
+
+#include "ble_protocol.h"
+#include "command_queue.h"
+#include "query_parser.h"
+
+namespace gp::ble {
+
+/// The characteristic pairs of the Control and Query service. Each write
+/// characteristic has a matching notify characteristic; a response always
+/// arrives on the partner of the one that carried the request.
+enum class Channel : uint8_t {
+  kCommand = 0,   ///< b5f90072 write, b5f90073 notify
+  kSettings = 1,  ///< b5f90074 write, b5f90075 notify
+  kQuery = 2,     ///< b5f90076 write, b5f90077 notify
+};
+
+inline constexpr size_t kChannelCount = 3;
+
+[[nodiscard]] std::string_view to_string(Channel c);
+
+/// Builds a correlation id from a channel and the leading payload byte.
+/// Exposed so callers can predict the id of a command they are about to
+/// submit.
+[[nodiscard]] constexpr CorrelationId correlation_of(Channel channel,
+                                                     uint8_t leading_byte) {
+  return (static_cast<CorrelationId>(channel) << 8) | leading_byte;
+}
+
+/// Setting id 91, value 66: the write that keeps the link alive.
+inline constexpr uint8_t kLedSettingId = 91;
+inline constexpr uint8_t kKeepAliveValue = 66;
+
+struct SessionConfig {
+  /// The camera drops the link after roughly ten seconds without traffic.
+  uint32_t keep_alive_interval_ms = 3000;
+
+  /// Usable ATT payload. Read from the negotiated MTU less three bytes of
+  /// ATT overhead; the default is the BLE 4.0 floor and is almost always
+  /// wrong. A MAX2 negotiates 517.
+  size_t att_payload = kMinAttPayload;
+
+  CommandQueueOptions queue;
+};
+
+class BleSession {
+ public:
+  /// Emitted when a fragment is ready to go out on `channel`'s write
+  /// characteristic. Called once per fragment, in order.
+  using WriteFn = std::function<void(Channel, std::span<const uint8_t>)>;
+
+  /// A submitted command completed. `payload` is the reassembled response,
+  /// empty unless the outcome is kResponded.
+  using ResponseFn =
+      std::function<void(CorrelationId, Outcome, std::span<const uint8_t>)>;
+
+  /// A reassembled message nobody was waiting for: a registered status or
+  /// setting push.
+  using PushFn = std::function<
+      void(Channel, const QueryResponse&, std::span<const uint8_t>)>;
+
+  /// The ready gate opened or closed.
+  using ReadyFn = std::function<void(bool)>;
+
+  /// A fed packet was rejected. Carries the reason so a caller can log which
+  /// of the framing failures occurred rather than "something went wrong".
+  using FrameErrorFn = std::function<void(Channel, FeedResult)>;
+
+  explicit BleSession(WriteFn write, SessionConfig cfg = SessionConfig{});
+
+  void on_response(ResponseFn fn) { on_response_ = std::move(fn); }
+  void on_push(PushFn fn) { on_push_ = std::move(fn); }
+  void on_ready(ReadyFn fn) { on_ready_ = std::move(fn); }
+  void on_frame_error(FrameErrorFn fn) { on_frame_error_ = std::move(fn); }
+
+  /// Feeds one notification from `channel`'s notify characteristic.
+  void feed(Channel channel, std::span<const uint8_t> packet, uint64_t now_ms);
+
+  /// Submits a command. The correlation id is derived from the channel and
+  /// the first payload byte. Returns false if one with the same id is
+  /// already outstanding.
+  bool submit(Channel channel,
+              std::span<const uint8_t> payload,
+              Priority priority,
+              uint64_t now_ms);
+
+  /// Drives command timeouts and the keep-alive. Call regularly; the
+  /// interval only bounds keep-alive jitter, not correctness.
+  void tick(uint64_t now_ms);
+
+  /// Updates the usable ATT payload after MTU negotiation.
+  void set_att_payload(size_t bytes);
+
+  /// Clears every partial frame, cancels outstanding commands, and forgets
+  /// readiness. Readiness must not survive a reconnect: commands would be
+  /// released before the camera has reported its state.
+  void on_disconnect();
+
+  [[nodiscard]] bool ready() const { return ready_.ready(); }
+  [[nodiscard]] size_t pending() const { return queue_.pending(); }
+  [[nodiscard]] size_t in_flight() const { return queue_.in_flight(); }
+  [[nodiscard]] size_t att_payload() const { return cfg_.att_payload; }
+
+ private:
+  void deliver(Channel channel, std::vector<uint8_t> message, uint64_t now_ms);
+
+  SessionConfig cfg_;
+  WriteFn write_;
+  ResponseFn on_response_;
+  PushFn on_push_;
+  ReadyFn on_ready_;
+  FrameErrorFn on_frame_error_;
+
+  // One reassembler per channel. Sharing one across characteristics would
+  // splice interleaved messages together.
+  Reassembler rx_[kChannelCount];
+
+  CommandQueue queue_;
+  ReadyState ready_;
+
+  uint64_t last_keep_alive_ms_{0};
+  bool keep_alive_started_{false};
+};
+
+}  // namespace gp::ble
