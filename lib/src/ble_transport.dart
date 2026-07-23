@@ -45,6 +45,7 @@ class GoProBleCamera {
 
   final _pushes = StreamController<BlePush>.broadcast();
   final _readyChanges = StreamController<bool>.broadcast();
+  final _faults = StreamController<Object>.broadcast();
   final _pending = <int, Completer<BleResponse>>{};
 
   ReceivePort? _events;
@@ -59,6 +60,15 @@ class GoProBleCamera {
   /// The ready gate opening and closing, derived from the busy and encoding
   /// statuses.
   Stream<bool> get readyChanges => _readyChanges.stream;
+
+  /// Trouble that does not belong to any one command: a GATT write that
+  /// failed, a message the reassembler could not frame.
+  ///
+  /// Kept off [pushes] deliberately. Both of these resolve as an ordinary
+  /// timeout for whoever was waiting, so nothing is lost by ignoring this
+  /// stream — but the timeout says only that no reply came, and these say
+  /// why. Listening is optional; not listening drops them.
+  Stream<Object> get faults => _faults.stream;
 
   bool get ready => !_closed && BleBindings.ready(_session);
 
@@ -152,6 +162,7 @@ class GoProBleCamera {
     _events?.close();
     await _pushes.close();
     await _readyChanges.close();
+    await _faults.close();
   }
 
   void _onEvent(dynamic message) {
@@ -167,12 +178,12 @@ class GoProBleCamera {
         //
         // A failed write is not propagated to the caller here. The command it
         // belongs to will time out natively, which is the same outcome the
-        // caller would see if the camera simply never answered. It is
-        // reported on [pushes] so the cause is visible rather than inferred.
+        // caller would see if the camera simply never answered. It goes to
+        // [faults] so the cause is visible rather than inferred.
         _writes[channel]?.writeValue(bytes, withResponse: false).catchError((
           Object e,
         ) {
-          if (!_pushes.isClosed) _pushes.addError(e);
+          if (!_faults.isClosed) _faults.add(e);
         });
 
       case BleResponse(:final correlationId):
@@ -186,10 +197,10 @@ class GoProBleCamera {
 
       case BleFrameErrorEvent(:final channel, :final error):
         // Framing errors reset the reassembler, so this costs one message
-        // rather than desynchronizing the stream. Surfaced as a push-side
-        // diagnostic rather than swallowed.
-        if (!_pushes.isClosed) {
-          _pushes.addError(
+        // rather than desynchronizing the stream. Reported rather than
+        // swallowed: a run of them means something is wrong with the link.
+        if (!_faults.isClosed) {
+          _faults.add(
             StateError('framing error on ${channel.name}: ${error.name}'),
           );
         }

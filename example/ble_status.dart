@@ -35,6 +35,7 @@ Future<void> main(List<String> args) async {
   camera.pushes.listen(
     (p) => stdout.writeln('  push on ${p.channel.name}: ${_hex(p.message)}'),
   );
+  camera.faults.listen((f) => stderr.writeln('  fault: $f'));
 
   // 8 is BUSY and 10 is ENCODING. Together they are the ready gate the
   // session applies to every queued command.
