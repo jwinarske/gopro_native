@@ -122,7 +122,7 @@ class CohnClient {
   /// [EnumCOHNStatus.COHN_PROVISIONED] within [timeout].
   Future<CohnCredentials> provision({
     bool override = false,
-    Duration timeout = const Duration(seconds: 60),
+    Duration timeout = const Duration(seconds: 120),
     Duration poll = const Duration(seconds: 2),
   }) async {
     final start = DateTime.now();
@@ -133,9 +133,24 @@ class CohnClient {
     // Provisioning is not instantaneous and the camera reports progress only
     // by way of its status, so this polls rather than pretending the create
     // call was the whole thing.
+    //
+    // COHN_PROVISIONED is not the finish line. The camera reports it while
+    // its network state is still COHN_STATE_ConnectingToNetwork, and in that
+    // window it has no address to give -- returning then hands back
+    // credentials with a null ipAddress, which CohnHttp cannot use.
+    //
+    // MEASURED on a HERO13 Black: provisioned at ~2 s, NetworkConnected with
+    // an address at ~20 s. Waiting on the address rather than the status is
+    // the difference between credentials that work and credentials that
+    // look complete.
     while (DateTime.now().difference(start) < timeout) {
       final s = await status();
-      if (s.hasStatus() && s.status == EnumCOHNStatus.COHN_PROVISIONED) {
+      final connected =
+          s.hasStatus() &&
+          s.status == EnumCOHNStatus.COHN_PROVISIONED &&
+          s.hasIpaddress() &&
+          s.ipaddress.isNotEmpty;
+      if (connected) {
         if (!s.hasUsername() || !s.hasPassword()) {
           throw const CohnException(
             'provisioned but the camera reported no credentials',
@@ -153,7 +168,10 @@ class CohnClient {
       }
       await Future<void>.delayed(poll);
     }
-    throw const CohnException('timed out waiting to be provisioned', null);
+    throw const CohnException(
+      'timed out waiting for the camera to reach the network',
+      null,
+    );
   }
 
   // The "get" actions are query-feature and ride the query characteristic;
