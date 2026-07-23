@@ -303,18 +303,18 @@ def dart_format(text: str) -> str:
     """
     dart = shutil.which("dart")
     if dart is None:
-        print("warning: dart not found; emitting unformatted source",
-              file=sys.stderr)
-        return text
+        raise GenError(
+            "dart not found on PATH. The generated sources are formatted, so "
+            "without it this would emit unformatted output and --check would "
+            "compare against something that is never written."
+        )
     with tempfile.TemporaryDirectory() as tmp:
         f = pathlib.Path(tmp) / "gen.dart"
         f.write_text(text)
         r = subprocess.run([dart, "format", str(f)],
                            capture_output=True, text=True)
         if r.returncode != 0:
-            print(f"warning: dart format failed: {r.stderr.strip()}",
-                  file=sys.stderr)
-            return text
+            raise GenError(f"dart format failed: {r.stderr.strip()}")
         return f.read_text()
 
 
