@@ -1,12 +1,12 @@
 name: gopro_native
 description: >-
-  Linux-first GoPro camera discovery over USB via libusb, with zero-copy FFI
-  event delivery. Enumerate-only: never claims the CDC-NCM interface.
-  Readiness-gated so a camera is reported only once it actually answers.
-version: 0.1.0
-publish_to: none
+  Linux-first GoPro camera control for Dart: USB discovery, BLE, HTTP, COHN,
+  Wi-Fi and livestreaming. Enumerate-only over USB, never claiming CDC-NCM.
+version: 0.2.0
 
 homepage: https://github.com/jwinarske/gopro_native
+repository: https://github.com/jwinarske/gopro_native
+issue_tracker: https://github.com/jwinarske/gopro_native/issues
 
 environment:
   sdk: ^3.10.0
@@ -15,12 +15,7 @@ platforms:
   linux:
 
 dependencies:
-  # Not on pub.dev, so pinned by commit rather than tag: the git-dependency
-  # build fix landed after v0.3.0, and a branch ref would move underneath us.
-  bluez_native:
-    git:
-      url: https://github.com/jwinarske/bluez_native.git
-      ref: 3c5a189d54ec0d43aae0a826b3efa5d5d4f9553f
+  bluez_native: ^0.3.1
   code_assets: ^1.0.0
   ffi: ^2.1.0
   hooks: ^2.1.0
