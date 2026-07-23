@@ -23,7 +23,8 @@ target_include_directories(dart_api_dl PUBLIC include)
 add_library(gopro_ble STATIC src/ble_protocol.cpp src/command_queue.cpp src/ble_link.cpp
                             src/query_parser.cpp
     src/ble_session.cpp
-    src/ble_bridge.cpp src/ble_session.cpp)
+    src/ble_bridge.cpp
+    src/link_bridge.cpp src/ble_session.cpp)
 target_include_directories(gopro_ble PUBLIC include)
 target_compile_options(gopro_ble PRIVATE -Wall -Wextra -Wpedantic)
 
@@ -69,6 +70,7 @@ add_library(gopro_nc SHARED
     src/query_parser.cpp
     src/ble_session.cpp
     src/ble_bridge.cpp
+    src/link_bridge.cpp
     $<TARGET_OBJECTS:dart_api_dl>
 )
 target_include_directories(gopro_nc PUBLIC include)
