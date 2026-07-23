@@ -18,6 +18,14 @@
     gopro_discovery_destroy;
     gopro_discovery_rescan;
     gopro_discovery_set_timeout;
+    gopro_ble_create;
+    gopro_ble_destroy;
+    gopro_ble_feed;
+    gopro_ble_submit;
+    gopro_ble_tick;
+    gopro_ble_set_att_payload;
+    gopro_ble_disconnect;
+    gopro_ble_ready;
     Dart_*;
   local:
     *;
