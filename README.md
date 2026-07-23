@@ -32,6 +32,8 @@ surface on the wired path.
 | `native/src/ble_session.cpp` | BLE framing, correlation, ready gate |
 | `native/src/ble_link.cpp` | BLE bring-up state machine |
 | `lib/src/ble_transport.dart` | GATT over D-Bus, the only BlueZ-facing code |
+| `lib/src/http/gopro_http.dart` | HTTP transport, streaming downloads |
+| `lib/src/http/commands.dart` | 40 typed commands over the generated table |
 
 Events are posted from a native worker thread via `Dart_PostCObject_DL`,
 which is thread-safe and callable from any thread. Dart never pumps anything.
@@ -292,6 +294,50 @@ session:
   to fastpass on the query channel. The camera answers queries while it
   records, which is the same reason stated from the camera's side.
 
+## HTTP command surface
+
+40 messages over USB or Wi-Fi, one typed method each.
+
+```dart
+final camera = GoProCommands(GoProHttp(discovered.baseUri!));
+
+await camera.setShutter(Toggle.enable);
+final state = await camera.getCameraState();
+await camera.downloadFile('100GOPRO/GX010001.MP4', File('clip.mp4'),
+    onProgress: (received, total) => print('$received / $total'));
+```
+
+Upstream declares each message as a decorator on an empty method body and
+builds the machinery by introspecting `**kwargs` at import time. Dart AOT has
+no runtime reflection, so the data comes across as a generated const table
+(`tool/gen_http_commands.py` → `lib/src/generated/http_commands.dart`) that
+one dispatcher reads.
+
+The argument *mapping* stays hand-written. Fifteen of the forty upstream
+methods rewrite their arguments before dispatch, from renaming a parameter —
+`delete_group` takes a `path` and sends `p` — to spreading a `datetime`
+across four query arguments. Generating those would mean interpreting
+arbitrary Python; writing them puts the transform where it happens.
+
+**Timeouts are not one policy.** Upstream hardcodes 5 seconds and applies it
+to media downloads as well, which works there only because `requests` reads
+it as a per-read timeout. A 5-second deadline on the whole request fails
+every video transfer. So JSON exchanges get `requestTimeout` (5 s, whole
+request) and downloads get `stallTimeout` (30 s since the last byte). A 4 GB
+file may take as long as it takes; a stream that has delivered nothing for
+30 seconds is stuck regardless of how large the file is.
+
+Downloads stream straight to disk — upstream runs synchronous `requests`
+inside an `async def`, blocking its event loop for the whole transfer. A
+failed or stalled download deletes its partial file, because a truncated
+video left on disk looks like a finished one to whatever finds it next.
+
+`set_shutter` is the one message whose fastpass status depends on its
+argument: stopping must not wait for the encoding it is trying to stop, while
+starting has no reason to jump the queue. The generator refuses to flatten
+that to a constant and records it as `HttpFastpass.conditional`; both
+constants would be wrong half the time.
+
 ## Status
 
 Validated end to end against a GoPro MAX2 (`2672:0059`): enumeration,
@@ -304,11 +350,17 @@ reassembly at the negotiated 517-byte MTU, correlation and response routing,
 the ready gate deriving from a status query, teardown, and recovery from a
 forced disconnect across repeated cycles.
 
-Generated constants cover 477 settings, 175 statuses and 100 protocol
-constants (`tool/gen_constants.py`).
+The HTTP command surface is covered by URL-composition and transport tests
+rather than by hardware: its 40 messages are exercised against a local server
+for the failure paths that matter — stalls, truncation, partial-file cleanup
+— and the URLs are checked against the generated table. A live pass over USB
+is still outstanding.
 
-Not yet implemented: the Open GoPro HTTP command surface, the protobuf layer,
-and COHN.
+Generated sources cover 477 settings, 175 statuses, 100 protocol constants
+(`tool/gen_constants.py`) and 40 HTTP messages
+(`tool/gen_http_commands.py`).
+
+Not yet implemented: the protobuf layer, COHN, and Wi-Fi.
 
 ## License
 
