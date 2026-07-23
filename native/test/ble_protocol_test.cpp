@@ -39,12 +39,14 @@ std::vector<uint8_t> pattern(size_t n, uint32_t seed = 1) {
   // sequence makes any transposition visible.
   std::vector<uint8_t> v(n);
   std::mt19937 rng(seed);
-  for (auto& b : v) b = static_cast<uint8_t>(rng() & 0xFF);
+  for (auto& b : v)
+    b = static_cast<uint8_t>(rng() & 0xFF);
   return v;
 }
 
 // Fragment then reassemble, returning the recovered message.
-std::vector<uint8_t> round_trip(const std::vector<uint8_t>& msg, size_t mtu,
+std::vector<uint8_t> round_trip(const std::vector<uint8_t>& msg,
+                                size_t mtu,
                                 bool* completed) {
   auto packets = gp::ble::fragment(msg, mtu);
   gp::ble::Reassembler r;
@@ -55,7 +57,8 @@ std::vector<uint8_t> round_trip(const std::vector<uint8_t>& msg, size_t mtu,
       *completed = (i + 1 == packets.size());  // must complete on the last one
       return r.take();
     }
-    if (res != gp::ble::FeedResult::kNeedMore) return {};
+    if (res != gp::ble::FeedResult::kNeedMore)
+      return {};
   }
   return {};
 }
@@ -89,16 +92,19 @@ void test_header_width_boundaries() {
   // EXT_13 covers < 2^13-1; EXT_16 takes over at that point. Both sides of the
   // switch must round-trip.
   const size_t sizes[] = {
-      8190, 8191, 8192, 8193,       // around 2^13-1
-      (1u << 14), (1u << 15) + 7,   // solidly EXT_16
-      gp::ble::kMaxMessageLen,      // largest expressible
+      8190,
+      8191,
+      8192,
+      8193,  // around 2^13-1
+      (1u << 14),
+      (1u << 15) + 7,           // solidly EXT_16
+      gp::ble::kMaxMessageLen,  // largest expressible
   };
   for (const size_t n : sizes) {
     bool completed = false;
     const auto msg = pattern(n, static_cast<uint32_t>(n));
     const auto got = round_trip(msg, 20, &completed);
-    check(got == msg && completed,
-          "round-trip at length " + std::to_string(n));
+    check(got == msg && completed, "round-trip at length " + std::to_string(n));
   }
 
   // One byte past what the 16-bit length can express must be refused, not
@@ -117,9 +123,11 @@ void test_fragment_shape() {
   size_t payload = 0;
   bool sizes_ok = true;
   for (size_t i = 0; i < packets.size(); ++i) {
-    if (packets[i].size() > 20) sizes_ok = false;
+    if (packets[i].size() > 20)
+      sizes_ok = false;
     if (i == 0) {
-      check((packets[i][0] & gp::ble::kContMask) == 0, "first packet is not a continuation");
+      check((packets[i][0] & gp::ble::kContMask) == 0,
+            "first packet is not a continuation");
       check(((packets[i][0] & gp::ble::kHdrMask) >> 5) ==
                 static_cast<uint8_t>(gp::ble::PacketHeader::kExt13),
             "first packet uses EXT_13");
@@ -158,7 +166,8 @@ void test_error_paths() {
   {  // Continuation with nothing in flight.
     gp::ble::Reassembler r;
     const std::vector<uint8_t> cont = {gp::ble::kContMask, 0x01, 0x02};
-    check(r.feed(cont) == FeedResult::kStrayCont, "stray continuation rejected");
+    check(r.feed(cont) == FeedResult::kStrayCont,
+          "stray continuation rejected");
     check(!r.in_progress(), "stray continuation leaves reassembler idle");
   }
   {  // Empty packet.
@@ -168,12 +177,14 @@ void test_error_paths() {
   {  // EXT_13 header claiming a second byte that is not there.
     gp::ble::Reassembler r;
     const std::vector<uint8_t> pkt = {0x20};
-    check(r.feed(pkt) == FeedResult::kTruncatedHdr, "truncated EXT_13 rejected");
+    check(r.feed(pkt) == FeedResult::kTruncatedHdr,
+          "truncated EXT_13 rejected");
   }
   {  // EXT_16 header missing its length bytes.
     gp::ble::Reassembler r;
     const std::vector<uint8_t> pkt = {0x40, 0x00};
-    check(r.feed(pkt) == FeedResult::kTruncatedHdr, "truncated EXT_16 rejected");
+    check(r.feed(pkt) == FeedResult::kTruncatedHdr,
+          "truncated EXT_16 rejected");
   }
   {  // Reserved header type.
     gp::ble::Reassembler r;
@@ -230,10 +241,10 @@ void test_mtu_scaling() {
   const auto at512 = gp::ble::fragment(msg, 512);
   check(at20.size() > 150, "3 KB needs >150 fragments at MTU 20");
   check(at512.size() < 10, "3 KB needs <10 fragments at MTU 512");
-  std::printf("  (3000 bytes: %zu fragments at 20, %zu at 512 — %.0fx fewer)\n",
-              at20.size(), at512.size(),
-              static_cast<double>(at20.size()) /
-                  static_cast<double>(at512.size()));
+  std::printf(
+      "  (3000 bytes: %zu fragments at 20, %zu at 512 — %.0fx fewer)\n",
+      at20.size(), at512.size(),
+      static_cast<double>(at20.size()) / static_cast<double>(at512.size()));
 
   // An MTU too small to hold the first header plus one payload byte must be
   // refused rather than looping forever emitting header-only packets.
