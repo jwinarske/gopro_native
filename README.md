@@ -35,6 +35,7 @@ surface on the wired path.
 | `lib/src/http/gopro_http.dart` | HTTP transport, streaming downloads |
 | `lib/src/http/commands.dart` | 40 typed commands over the generated table |
 | `lib/proto/*.dart` | protobuf, split per feature so descriptors tree shake |
+| `lib/src/cohn/` | COHN provisioning, credential storage, pinned TLS |
 
 Events are posted from a native worker thread via `Dart_PostCObject_DL`,
 which is thread-safe and callable from any thread. Dart never pumps anything.
@@ -416,6 +417,54 @@ An incomplete message is sent as zero bytes and shows up as the camera
 ignoring a command. `isInitialized()` reports it and `check()` names the
 missing field; anything putting a message on the wire has to call one of them.
 
+## COHN
+
+Camera On the Home Network: the camera reachable over an existing network
+rather than its own access point. Provisioning is protobuf over BLE; using it
+afterwards is HTTPS with Basic auth.
+
+```dart
+final cohn = CohnClient(camera);
+final state = await cohn.status();          // NotifyCOHNStatus
+
+final creds = await cohn.provision();       // camera must already be on Wi-Fi
+await FileCredentialStore().write(serial, creds);
+
+final gopro = GoProCommands(CohnHttp(creds));
+```
+
+**Credentials do not go in the working directory.** The reference writes the
+username, password and certificate to `cohn_db.json` wherever the program
+happened to start, pretty-printed and world-readable. `FileCredentialStore`
+writes a `0600` file in a `0700` directory under `$XDG_STATE_HOME`, and
+checks the mode on read — a file that has become group-readable since it was
+written is refused rather than quietly used. The camera serial names the file
+and is sanitized first, because it is input.
+
+`CohnCredentials.toString` omits the password and the certificate. Those
+reach logs and crash reports, and the Basic token is the password with one
+reversible transformation applied. The `Authorization` header is held
+privately by the HTTP client and never appears in an exception.
+
+**Pinning, not disabling.** COHN presents a self-signed certificate, which
+`HttpClient` rejects. The fix people reach for first is:
+
+```dart
+badCertificateCallback: (cert, host, port) => true   // do not do this
+```
+
+That does not accept the camera's certificate — it accepts every certificate
+from anything answering on that address, which on a home network is precisely
+what the certificate exists to prevent. The certificate goes into the trust
+store instead, with `withTrustedRoots: false` so nothing else is trusted for
+that client.
+
+`bypassEulaCheck` is surfaced rather than hardcoded to true as the reference
+does, and defaults to false: silently accepting an agreement on someone's
+behalf is not a library's call. It is also not a field in the vendored
+definitions for this API version, so asking for it raises rather than being
+quietly dropped.
+
 ## Status
 
 Validated end to end against a GoPro MAX2 (`2672:0059`): enumeration,
@@ -453,11 +502,16 @@ request returned 564 bytes across the reassembler, correctly correlated, and
 decoded to 3 preset groups and 13 presets with mode and title enums
 resolving.
 
-COHN is not implemented by that camera. Get COHN Status times out with no
-reply at all, on the same feature and characteristic where preset status
-answers, so it is the camera and not the framing.
+COHN is not implemented by the MAX2. Get COHN Status times out with no reply
+at all, on the same feature and characteristic where preset status answers,
+so it is the camera and not the framing. A HERO13 Black answers it, reporting
+`COHN_UNPROVISIONED` / `COHN_STATE_Idle` — the correct state before
+provisioning.
 
-Not yet implemented: COHN, and Wi-Fi.
+Provisioning itself is not yet exercised end to end: it requires a camera
+already joined to a network, which is network management and not built.
+
+Not yet implemented: Wi-Fi.
 
 ## License
 
