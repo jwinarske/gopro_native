@@ -24,11 +24,21 @@ const _controlQueryService = '0000fea6-0000-1000-8000-00805f9b34fb';
 
 String _gp(String short) => 'b5f9$short-aa8d-11e3-9046-0002a5d5c51b';
 
-/// Write and notify characteristic for each channel.
+/// Write and notify characteristic for each channel of the Control & Query
+/// service. Every camera has all three, and bring-up requires them.
 final Map<BleChannel, ({String write, String notify})> _characteristics = {
   BleChannel.command: (write: _gp('0072'), notify: _gp('0073')),
   BleChannel.settings: (write: _gp('0074'), notify: _gp('0075')),
   BleChannel.query: (write: _gp('0076'), notify: _gp('0077')),
+};
+
+/// Camera Management, a separate service carrying network management.
+///
+/// Optional on purpose. A camera that does not expose it is still fully
+/// usable for everything else, so requiring it would turn a missing feature
+/// into a failed connection.
+final Map<BleChannel, ({String write, String notify})> _optionalChars = {
+  BleChannel.network: (write: _gp('0091'), notify: _gp('0092')),
 };
 
 /// The two statuses the ready gate is derived from. Native calls them
@@ -671,19 +681,22 @@ class GoProBleTransport {
     );
   }
 
+  /// Whether the required three pairs are located. The optional Camera
+  /// Management pair is deliberately not counted: waiting for a service the
+  /// camera may not have would stall bring-up forever.
   bool _complete(
     Map<BleChannel, BlueZGattCharacteristic> writes,
     Map<BleChannel, BlueZGattCharacteristic> notifies,
-  ) =>
-      writes.length == _characteristics.length &&
-      notifies.length == _characteristics.length;
+  ) => _characteristics.keys.every(
+    (c) => writes.containsKey(c) && notifies.containsKey(c),
+  );
 
   void _locate(
     List<BlueZGattCharacteristic> chars,
     Map<BleChannel, BlueZGattCharacteristic> writes,
     Map<BleChannel, BlueZGattCharacteristic> notifies,
   ) {
-    for (final entry in _characteristics.entries) {
+    for (final entry in {..._characteristics, ..._optionalChars}.entries) {
       for (final c in chars) {
         final uuid = c.uuid.toString().toLowerCase();
         if (uuid == entry.value.write) writes[entry.key] = c;
