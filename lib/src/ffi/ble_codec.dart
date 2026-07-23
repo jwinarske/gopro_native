@@ -24,7 +24,14 @@ import 'dart:typed_data';
 enum BleChannel {
   command(0), // b5f90072 write, b5f90073 notify
   settings(1), // b5f90074 write, b5f90075 notify
-  query(2); // b5f90076 write, b5f90077 notify
+  query(2), // b5f90076 write, b5f90077 notify
+
+  /// Camera Management: b5f90091 write, b5f90092 notify.
+  ///
+  /// A different service from the other three. Network management is only
+  /// answered here — on the command characteristic every camera tested
+  /// replies with a bare `[feature][0x02]` regardless of the action.
+  network(3); // b5f90091 write, b5f90092 notify
 
   const BleChannel(this.value);
   final int value;

@@ -20,6 +20,8 @@ export 'src/streaming/livestream.dart'
 export 'src/streaming/webcam.dart'
     show WebcamClient, WebcamException, WebcamReply;
 export 'src/wifi/access_point.dart' show GoProAccessPoint;
+export 'src/wifi/network_client.dart'
+    show AccessPoint, NetworkClient, NetworkException, ScanResult;
 export 'src/wifi/wifi_controller.dart'
     show
         ApCredentials,

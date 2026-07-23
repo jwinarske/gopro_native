@@ -54,9 +54,18 @@ enum class Channel : uint8_t {
   kCommand = 0,   ///< b5f90072 write, b5f90073 notify
   kSettings = 1,  ///< b5f90074 write, b5f90075 notify
   kQuery = 2,     ///< b5f90076 write, b5f90077 notify
+
+  /// Camera Management, b5f90091 write and b5f90092 notify.
+  ///
+  /// A different service from the other three, and network management does
+  /// not work anywhere else: sent on the command characteristic every camera
+  /// tested answers a bare [feature][0x02] and nothing more, whatever the
+  /// action. Optional, because a camera that does not expose the service is
+  /// still fully usable for everything else.
+  kNetwork = 3,
 };
 
-inline constexpr size_t kChannelCount = 3;
+inline constexpr size_t kChannelCount = 4;
 
 [[nodiscard]] std::string_view to_string(Channel c);
 

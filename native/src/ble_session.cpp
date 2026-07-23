@@ -14,6 +14,8 @@ std::string_view to_string(Channel c) {
       return "settings";
     case Channel::kQuery:
       return "query";
+    case Channel::kNetwork:
+      return "network";
   }
   return "?";
 }
