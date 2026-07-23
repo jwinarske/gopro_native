@@ -109,7 +109,7 @@ jobs:
 
   # ── Generated sources match their input ──────────────────────────────────
   codegen:
-    name: Generated constants up to date
+    name: Generated sources up to date
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -120,8 +120,9 @@ jobs:
       - uses: dart-lang/setup-dart@v1
         with: { sdk: stable }
       # Regenerating by hand and forgetting to commit leaves the checked-in
-      # constants silently disagreeing with tool/upstream.
+      # sources silently disagreeing with tool/upstream.
       - run: tool/gen_constants.py --check
+      - run: tool/gen_http_commands.py --check
 
   # ── The enumerate-only invariant ─────────────────────────────────────────
   invariant:

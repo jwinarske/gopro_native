@@ -20,6 +20,11 @@ export 'src/ffi/ble_codec.dart'
         BleResponse;
 export 'src/ffi/link_types.dart' show LinkAction, LinkState, StallReason;
 export 'src/ffi/types.dart' show GoProCamera, Readiness, SerialSource;
+export 'src/http/commands.dart' show GoProCommands;
+export 'src/http/gopro_http.dart'
+    show GoProHttp, GoProHttpException, GoProStalledException;
+export 'src/http/http_message.dart'
+    show HttpFastpass, HttpMessage, HttpMethod, HttpResponseKind;
 
 // Generated from the Open GoPro Python SDK — see tool/gen_constants.py.
 export 'src/generated/constants.dart';

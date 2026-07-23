@@ -32,6 +32,8 @@ surface on the wired path.
 | `native/src/ble_session.cpp` | BLE framing, correlation, ready gate |
 | `native/src/ble_link.cpp` | BLE bring-up state machine |
 | `lib/src/ble_transport.dart` | GATT over D-Bus, the only BlueZ-facing code |
+| `lib/src/http/gopro_http.dart` | HTTP transport, streaming downloads |
+| `lib/src/http/commands.dart` | 40 typed commands over the generated table |
 
 Events are posted from a native worker thread via `Dart_PostCObject_DL`,
 which is thread-safe and callable from any thread. Dart never pumps anything.
@@ -292,6 +294,63 @@ session:
   to fastpass on the query channel. The camera answers queries while it
   records, which is the same reason stated from the camera's side.
 
+## HTTP command surface
+
+40 messages over USB or Wi-Fi, one typed method each.
+
+```dart
+final camera = GoProCommands(GoProHttp(discovered.baseUri!));
+
+await camera.setShutter(Toggle.enable);
+final state = await camera.getCameraState();
+await camera.downloadFile('100GOPRO/GX010001.MP4', File('clip.mp4'),
+    onProgress: (received, total) => print('$received / $total'));
+```
+
+Upstream declares each message as a decorator on an empty method body and
+builds the machinery by introspecting `**kwargs` at import time. Dart AOT has
+no runtime reflection, so the data comes across as a generated const table
+(`tool/gen_http_commands.py` → `lib/src/generated/http_commands.dart`) that
+one dispatcher reads.
+
+The argument *mapping* stays hand-written. Fifteen of the forty upstream
+methods rewrite their arguments before dispatch, from renaming a parameter —
+`delete_group` takes a `path` and sends `p` — to spreading a `datetime`
+across four query arguments. Generating those would mean interpreting
+arbitrary Python; writing them puts the transform where it happens.
+
+**Timeouts are not one policy.** Upstream hardcodes 5 seconds and applies it
+to media downloads as well, which works there only because `requests` reads
+it as a per-read timeout. A 5-second deadline on the whole request fails
+every video transfer. So JSON exchanges get `requestTimeout` (5 s, whole
+request) and downloads get `stallTimeout` (30 s since the last byte). A 4 GB
+file may take as long as it takes; a stream that has delivered nothing for
+30 seconds is stuck regardless of how large the file is.
+
+Downloads stream straight to disk — upstream runs synchronous `requests`
+inside an `async def`, blocking its event loop for the whole transfer. A
+failed or stalled download deletes its partial file, because a truncated
+video left on disk looks like a finished one to whatever finds it next.
+
+`set_shutter` is the one message whose fastpass status depends on its
+argument: stopping must not wait for the encoding it is trying to stop, while
+starting has no reason to jump the queue. The generator refuses to flatten
+that to a constant and records it as `HttpFastpass.conditional`; both
+constants would be wrong half the time.
+
+**A slash in a query argument must not be escaped.** Every media command
+passes a path that way, and the camera rejects the escaped form:
+
+```
+path=100GOPRO%2FGX010087.MP4    400 Bad Request, empty body
+path=100GOPRO/GX010087.MP4      200
+```
+
+RFC 3986 permits `/` in a query component; Dart's `Uri.queryParameters`
+escapes it anyway, so the URL cannot be built that way. Getting this wrong
+breaks every media command at once and the camera's 400 says nothing about
+why.
+
 ## Status
 
 Validated end to end against a GoPro MAX2 (`2672:0059`): enumeration,
@@ -304,11 +363,27 @@ reassembly at the negotiated 517-byte MTU, correlation and response routing,
 the ready gate deriving from a status query, teardown, and recovery from a
 forced disconnect across repeated cycles.
 
-Generated constants cover 477 settings, 175 statuses and 100 protocol
-constants (`tool/gen_constants.py`).
+The HTTP command surface is validated over USB against a HERO13 Black
+(firmware `H24.01.02.10.00`): camera info, state (79 statuses, 120
+settings), date and time, media list and metadata, last captured, thumbnail,
+GPMF and telemetry, turbo transfer, and file download.
 
-Not yet implemented: the Open GoPro HTTP command surface, the protobuf layer,
-and COHN.
+A 2.2 GB video transferred in 56 s at 37 MiB/s with resident memory flat at
+215 MB throughout, through a client configured with a 100 ms JSON request
+timeout — which is what the separate download policy buys. Upstream's 5 s
+whole-request deadline would have abandoned that transfer at 4%.
+
+Two endpoints in the Open GoPro specification are not implemented by that
+camera and firmware: `gopro/camera/name` answers 404 *"Command is not
+recognized"*, and `gopro/media/screennail` answers 400 for a video. Both
+reproduce identically under `curl`, so they are the camera's answer rather
+than a malformed request; the exceptions carry the camera's own message.
+
+Generated sources cover 477 settings, 175 statuses, 100 protocol constants
+(`tool/gen_constants.py`) and 40 HTTP messages
+(`tool/gen_http_commands.py`).
+
+Not yet implemented: the protobuf layer, COHN, and Wi-Fi.
 
 ## License
 
