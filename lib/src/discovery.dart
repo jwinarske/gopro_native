@@ -41,10 +41,9 @@ class GoProDiscovery {
   /// Cameras that have reached [Readiness.l3Ready] — reachable on
   /// [GoProCamera.baseUri]. A camera appears here at most once per
   /// attachment.
-  Stream<GoProCamera> get ready =>
-      _updates.stream.where((c) => c.isReady).distinct(
-            (a, b) => a.sysfsName == b.sysfsName,
-          );
+  Stream<GoProCamera> get ready => _updates.stream
+      .where((c) => c.isReady)
+      .distinct((a, b) => a.sysfsName == b.sysfsName);
 
   /// Cameras that have been unplugged.
   Stream<GoProCamera> get departures => _departures.stream;

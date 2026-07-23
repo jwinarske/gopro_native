@@ -15,164 +15,244 @@
 enum StatusId {
   /// Upstream name: `BATTERY_PRESENT`
   batteryPresent(1),
+
   /// Upstream name: `INTERNAL_BATTERY_BARS`
   internalBatteryBars(2),
+
   /// Upstream name: `OVERHEATING`
   overheating(6),
+
   /// Upstream name: `BUSY`
   busy(8),
+
   /// Upstream name: `QUICK_CAPTURE`
   quickCapture(9),
+
   /// Upstream name: `ENCODING`
   encoding(10),
+
   /// Upstream name: `LCD_LOCK`
   lcdLock(11),
+
   /// Upstream name: `VIDEO_ENCODING_DURATION`
   videoEncodingDuration(13),
+
   /// Upstream name: `WIRELESS_CONNECTIONS_ENABLED`
   wirelessConnectionsEnabled(17),
+
   /// Upstream name: `PAIRING_STATE`
   pairingState(19),
+
   /// Upstream name: `LAST_PAIRING_TYPE`
   lastPairingType(20),
+
   /// Upstream name: `LAST_PAIRING_SUCCESS`
   lastPairingSuccess(21),
+
   /// Upstream name: `WIFI_SCAN_STATE`
   wifiScanState(22),
+
   /// Upstream name: `LAST_WIFI_SCAN_SUCCESS`
   lastWifiScanSuccess(23),
+
   /// Upstream name: `WIFI_PROVISIONING_STATE`
   wifiProvisioningState(24),
+
   /// Upstream name: `REMOTE_VERSION`
   remoteVersion(26),
+
   /// Upstream name: `REMOTE_CONNECTED`
   remoteConnected(27),
+
   /// Upstream name: `CONNECTED_WIFI_SSID`
   connectedWifiSsid(29),
+
   /// Upstream name: `ACCESS_POINT_SSID`
   accessPointSsid(30),
+
   /// Upstream name: `CONNECTED_DEVICES`
   connectedDevices(31),
+
   /// Upstream name: `PREVIEW_STREAM`
   previewStream(32),
+
   /// Upstream name: `PRIMARY_STORAGE`
   primaryStorage(33),
+
   /// Upstream name: `REMAINING_PHOTOS`
   remainingPhotos(34),
+
   /// Upstream name: `REMAINING_VIDEO_TIME`
   remainingVideoTime(35),
+
   /// Upstream name: `PHOTOS`
   photos(38),
+
   /// Upstream name: `VIDEOS`
   videos(39),
+
   /// Upstream name: `OTA`
   ota(41),
+
   /// Upstream name: `PENDING_FW_UPDATE_CANCEL`
   pendingFwUpdateCancel(42),
+
   /// Upstream name: `LOCATE`
   locate(45),
+
   /// Upstream name: `TIMELAPSE_INTERVAL_COUNTDOWN`
   timelapseIntervalCountdown(49),
+
   /// Upstream name: `SD_CARD_REMAINING`
   sdCardRemaining(54),
+
   /// Upstream name: `PREVIEW_STREAM_AVAILABLE`
   previewStreamAvailable(55),
+
   /// Upstream name: `WIFI_BARS`
   wifiBars(56),
+
   /// Upstream name: `ACTIVE_HILIGHTS`
   activeHilights(58),
+
   /// Upstream name: `TIME_SINCE_LAST_HILIGHT`
   timeSinceLastHilight(59),
+
   /// Upstream name: `MINIMUM_STATUS_POLL_PERIOD`
   minimumStatusPollPeriod(60),
+
   /// Upstream name: `LIVEVIEW_EXPOSURE_SELECT_MODE`
   liveviewExposureSelectMode(65),
+
   /// Upstream name: `LIVEVIEW_Y`
   liveviewY(66),
+
   /// Upstream name: `LIVEVIEW_X`
   liveviewX(67),
+
   /// Upstream name: `GPS_LOCK`
   gpsLock(68),
+
   /// Upstream name: `AP_MODE`
   apMode(69),
+
   /// Upstream name: `INTERNAL_BATTERY_PERCENTAGE`
   internalBatteryPercentage(70),
+
   /// Upstream name: `MICROPHONE_ACCESSORY`
   microphoneAccessory(74),
+
   /// Upstream name: `ZOOM_LEVEL`
   zoomLevel(75),
+
   /// Upstream name: `WIRELESS_BAND`
   wirelessBand(76),
+
   /// Upstream name: `ZOOM_AVAILABLE`
   zoomAvailable(77),
+
   /// Upstream name: `MOBILE_FRIENDLY`
   mobileFriendly(78),
+
   /// Upstream name: `FTU`
   ftu(79),
+
   /// Upstream name: `NUM_5GHZ_AVAILABLE`
   num5GhzAvailable(81),
+
   /// Upstream name: `READY`
   ready(82),
+
   /// Upstream name: `OTA_CHARGED`
   otaCharged(83),
+
   /// Upstream name: `COLD`
   cold(85),
+
   /// Upstream name: `ROTATION`
   rotation(86),
+
   /// Upstream name: `ZOOM_WHILE_ENCODING`
   zoomWhileEncoding(88),
+
   /// Upstream name: `FLATMODE`
   flatmode(89),
+
   /// Upstream name: `VIDEO_PRESET`
   videoPreset(93),
+
   /// Upstream name: `PHOTO_PRESET`
   photoPreset(94),
+
   /// Upstream name: `TIMELAPSE_PRESET`
   timelapsePreset(95),
+
   /// Upstream name: `PRESET_GROUP`
   presetGroup(96),
+
   /// Upstream name: `PRESET`
   preset(97),
+
   /// Upstream name: `PRESET_MODIFIED`
   presetModified(98),
+
   /// Upstream name: `REMAINING_LIVE_BURSTS`
   remainingLiveBursts(99),
+
   /// Upstream name: `LIVE_BURSTS`
   liveBursts(100),
+
   /// Upstream name: `CAPTURE_DELAY_ACTIVE`
   captureDelayActive(101),
+
   /// Upstream name: `MEDIA_MOD_STATE`
   mediaModState(102),
+
   /// Upstream name: `TIME_WARP_SPEED`
   timeWarpSpeed(103),
+
   /// Upstream name: `LINUX_CORE`
   linuxCore(104),
+
   /// Upstream name: `LENS_TYPE`
   lensType(105),
+
   /// Upstream name: `HINDSIGHT`
   hindsight(106),
+
   /// Upstream name: `SCHEDULED_CAPTURE_PRESET_ID`
   scheduledCapturePresetId(107),
+
   /// Upstream name: `SCHEDULED_CAPTURE`
   scheduledCapture(108),
+
   /// Upstream name: `DISPLAY_MOD_STATUS`
   displayModStatus(110),
+
   /// Upstream name: `SD_CARD_WRITE_SPEED_ERROR`
   sdCardWriteSpeedError(111),
+
   /// Upstream name: `SD_CARD_ERRORS`
   sdCardErrors(112),
+
   /// Upstream name: `TURBO_TRANSFER`
   turboTransfer(113),
+
   /// Upstream name: `CAMERA_CONTROL_ID`
   cameraControlId(114),
+
   /// Upstream name: `USB_CONNECTED`
   usbConnected(115),
+
   /// Upstream name: `USB_CONTROLLED`
   usbControlled(116),
+
   /// Upstream name: `SD_CARD_CAPACITY`
   sdCardCapacity(117),
+
   /// Upstream name: `PHOTO_INTERVAL_CAPTURE_COUNT`
   photoIntervalCaptureCount(118),
+
   /// Upstream name: `CAMERA_NAME`
   cameraName(122);
 
@@ -197,12 +277,16 @@ enum StatusId {
 enum InternalBatteryBars {
   /// Upstream name: `ZERO`
   zero(0),
+
   /// Upstream name: `ONE`
   one(1),
+
   /// Upstream name: `TWO`
   two(2),
+
   /// Upstream name: `THREE`
   three(3),
+
   /// Upstream name: `CHARGING`
   charging(4);
 
@@ -227,12 +311,16 @@ enum InternalBatteryBars {
 enum PairingState {
   /// Upstream name: `NEVER_STARTED`
   neverStarted(0),
+
   /// Upstream name: `STARTED`
   started(1),
+
   /// Upstream name: `ABORTED`
   aborted(2),
+
   /// Upstream name: `CANCELLED`
   cancelled(3),
+
   /// Upstream name: `COMPLETED`
   completed(4);
 
@@ -257,10 +345,13 @@ enum PairingState {
 enum LastPairingType {
   /// Upstream name: `NOT_PAIRING`
   notPairing(0),
+
   /// Upstream name: `PAIRING_APP`
   pairingApp(1),
+
   /// Upstream name: `PAIRING_REMOTE_CONTROL`
   pairingRemoteControl(2),
+
   /// Upstream name: `PAIRING_BLUETOOTH_DEVICE`
   pairingBluetoothDevice(3);
 
@@ -285,12 +376,16 @@ enum LastPairingType {
 enum WifiScanState {
   /// Upstream name: `NEVER_STARTED`
   neverStarted(0),
+
   /// Upstream name: `STARTED`
   started(1),
+
   /// Upstream name: `ABORTED`
   aborted(2),
+
   /// Upstream name: `CANCELED`
   canceled(3),
+
   /// Upstream name: `COMPLETED`
   completed(4);
 
@@ -315,12 +410,16 @@ enum WifiScanState {
 enum WifiProvisioningState {
   /// Upstream name: `NEVER_STARTED`
   neverStarted(0),
+
   /// Upstream name: `STARTED`
   started(1),
+
   /// Upstream name: `ABORTED`
   aborted(2),
+
   /// Upstream name: `CANCELED`
   canceled(3),
+
   /// Upstream name: `COMPLETED`
   completed(4);
 
@@ -345,16 +444,22 @@ enum WifiProvisioningState {
 enum PrimaryStorage {
   /// Upstream name: `UNKNOWN`
   unknown(-1),
+
   /// Upstream name: `OK`
   ok(0),
+
   /// Upstream name: `SD_CARD_FULL`
   sdCardFull(1),
+
   /// Upstream name: `SD_CARD_REMOVED`
   sdCardRemoved(2),
+
   /// Upstream name: `SD_CARD_FORMAT_ERROR`
   sdCardFormatError(3),
+
   /// Upstream name: `SD_CARD_BUSY`
   sdCardBusy(4),
+
   /// Upstream name: `SD_CARD_SWAPPED`
   sdCardSwapped(8);
 
@@ -379,24 +484,34 @@ enum PrimaryStorage {
 enum Ota {
   /// Upstream name: `IDLE`
   idle(0),
+
   /// Upstream name: `DOWNLOADING`
   downloading(1),
+
   /// Upstream name: `VERIFYING`
   verifying(2),
+
   /// Upstream name: `DOWNLOAD_FAILED`
   downloadFailed(3),
+
   /// Upstream name: `VERIFY_FAILED`
   verifyFailed(4),
+
   /// Upstream name: `READY`
   ready(5),
+
   /// Upstream name: `GOPRO_APP_DOWNLOADING`
   goproAppDownloading(6),
+
   /// Upstream name: `GOPRO_APP_VERIFYING`
   goproAppVerifying(7),
+
   /// Upstream name: `GOPRO_APP_DOWNLOAD_FAILED`
   goproAppDownloadFailed(8),
+
   /// Upstream name: `GOPRO_APP_VERIFY_FAILED`
   goproAppVerifyFailed(9),
+
   /// Upstream name: `GOPRO_APP_READY`
   goproAppReady(10);
 
@@ -421,10 +536,13 @@ enum Ota {
 enum LiveviewExposureSelectMode {
   /// Upstream name: `DISABLED`
   disabled(0),
+
   /// Upstream name: `AUTO`
   auto(1),
+
   /// Upstream name: `ISO_LOCK`
   isoLock(2),
+
   /// Upstream name: `HEMISPHERE`
   hemisphere(3);
 
@@ -449,8 +567,10 @@ enum LiveviewExposureSelectMode {
 enum MicrophoneAccessory {
   /// Upstream name: `ACCESSORY_NOT_CONNECTED`
   accessoryNotConnected(0),
+
   /// Upstream name: `ACCESSORY_CONNECTED`
   accessoryConnected(1),
+
   /// Upstream name: `ACCESSORY_CONNECTED_AND_A_MICROPHONE_IS_PLUGGED_INTO_THE_ACCESSORY`
   accessoryConnectedAndAMicrophoneIsPluggedIntoTheAccessory(2);
 
@@ -477,6 +597,7 @@ enum MicrophoneAccessory {
 enum WirelessBandStatus {
   /// Upstream name: `NUM_2_4_GHZ`
   num24Ghz(0),
+
   /// Upstream name: `NUM_5_GHZ`
   num5Ghz(1);
 
@@ -501,10 +622,13 @@ enum WirelessBandStatus {
 enum Rotation {
   /// Upstream name: `NUM_0_DEGREES_UPRIGHT_`
   num0DegreesUpright(0),
+
   /// Upstream name: `NUM_180_DEGREES_UPSIDE_DOWN_`
   num180DegreesUpsideDown(1),
+
   /// Upstream name: `NUM_90_DEGREES_LAYING_ON_RIGHT_SIDE_`
   num90DegreesLayingOnRightSide(2),
+
   /// Upstream name: `NUM_270_DEGREES_LAYING_ON_LEFT_SIDE_`
   num270DegreesLayingOnLeftSide(3);
 
@@ -529,8 +653,10 @@ enum Rotation {
 enum MediaModState {
   /// Upstream name: `MICROPHONE_REMOVED`
   microphoneRemoved(0),
+
   /// Upstream name: `MICROPHONE_ONLY`
   microphoneOnly(2),
+
   /// Upstream name: `MICROPHONE_WITH_EXTERNAL_MICROPHONE`
   microphoneWithExternalMicrophone(3);
 
@@ -555,28 +681,40 @@ enum MediaModState {
 enum TimeWarpSpeed {
   /// Upstream name: `NUM_15X`
   num15X(0),
+
   /// Upstream name: `NUM_30X`
   num30X(1),
+
   /// Upstream name: `NUM_60X`
   num60X(2),
+
   /// Upstream name: `NUM_150X`
   num150X(3),
+
   /// Upstream name: `NUM_300X`
   num300X(4),
+
   /// Upstream name: `NUM_900X`
   num900X(5),
+
   /// Upstream name: `NUM_1800X`
   num1800X(6),
+
   /// Upstream name: `NUM_2X`
   num2X(7),
+
   /// Upstream name: `NUM_5X`
   num5X(8),
+
   /// Upstream name: `NUM_10X`
   num10X(9),
+
   /// Upstream name: `AUTO`
   auto(10),
+
   /// Upstream name: `NUM_1X_REALTIME_`
   num1XRealtime(11),
+
   /// Upstream name: `NUM_1_2X_SLOW_MOTION_`
   num12XSlowMotion(12);
 
@@ -601,22 +739,31 @@ enum TimeWarpSpeed {
 enum LensType {
   /// Upstream name: `DEFAULT`
   default$(0),
+
   /// Upstream name: `MAX_LENS`
   maxLens(1),
+
   /// Upstream name: `MAX_LENS_2_0`
   maxLens20(2),
+
   /// Upstream name: `MAX_LENS_2_5`
   maxLens25(3),
+
   /// Upstream name: `MACRO_LENS`
   macroLens(4),
+
   /// Upstream name: `ANAMORPHIC_LENS`
   anamorphicLens(5),
+
   /// Upstream name: `NEUTRAL_DENSITY_4`
   neutralDensity4(6),
+
   /// Upstream name: `NEUTRAL_DENSITY_8`
   neutralDensity8(7),
+
   /// Upstream name: `NEUTRAL_DENSITY_16`
   neutralDensity16(8),
+
   /// Upstream name: `NEUTRAL_DENSITY_32`
   neutralDensity32(9);
 
@@ -641,18 +788,25 @@ enum LensType {
 enum DisplayModStatus {
   /// Upstream name: `NUM_000_DISPLAY_MOD_0_HDMI_0_DISPLAY_MOD_CONNECTED_FALSE`
   num000DisplayMod0Hdmi0DisplayModConnectedFalse(0),
+
   /// Upstream name: `NUM_001_DISPLAY_MOD_0_HDMI_0_DISPLAY_MOD_CONNECTED_TRUE`
   num001DisplayMod0Hdmi0DisplayModConnectedTrue(1),
+
   /// Upstream name: `NUM_010_DISPLAY_MOD_0_HDMI_1_DISPLAY_MOD_CONNECTED_FALSE`
   num010DisplayMod0Hdmi1DisplayModConnectedFalse(2),
+
   /// Upstream name: `NUM_011_DISPLAY_MOD_0_HDMI_1_DISPLAY_MOD_CONNECTED_TRUE`
   num011DisplayMod0Hdmi1DisplayModConnectedTrue(3),
+
   /// Upstream name: `NUM_100_DISPLAY_MOD_1_HDMI_0_DISPLAY_MOD_CONNECTED_FALSE`
   num100DisplayMod1Hdmi0DisplayModConnectedFalse(4),
+
   /// Upstream name: `NUM_101_DISPLAY_MOD_1_HDMI_0_DISPLAY_MOD_CONNECTED_TRUE`
   num101DisplayMod1Hdmi0DisplayModConnectedTrue(5),
+
   /// Upstream name: `NUM_110_DISPLAY_MOD_1_HDMI_1_DISPLAY_MOD_CONNECTED_FALSE`
   num110DisplayMod1Hdmi1DisplayModConnectedFalse(6),
+
   /// Upstream name: `NUM_111_DISPLAY_MOD_1_HDMI_1_DISPLAY_MOD_CONNECTED_TRUE`
   num111DisplayMod1Hdmi1DisplayModConnectedTrue(7);
 
@@ -677,10 +831,16 @@ enum DisplayModStatus {
 enum CameraControlId {
   /// Upstream name: `CAMERA_IDLE_NO_ONE_IS_ATTEMPTING_TO_CHANGE_CAMERA_SETTINGS`
   cameraIdleNoOneIsAttemptingToChangeCameraSettings(0),
+
   /// Upstream name: `CAMERA_CONTROL_CAMERA_IS_IN_A_MENU_OR_CHANGING_SETTINGS_TO_INTERVENE_APP_MUST_REQUEST_CONTROL`
-  cameraControlCameraIsInAMenuOrChangingSettingsToInterveneAppMustRequestControl(1),
+  cameraControlCameraIsInAMenuOrChangingSettingsToInterveneAppMustRequestControl(
+    1,
+  ),
+
   /// Upstream name: `CAMERA_EXTERNAL_CONTROL_AN_OUTSIDE_ENTITY_APP_HAS_CONTROL_AND_IS_IN_A_MENU_OR_MODIFYING_SETTINGS`
-  cameraExternalControlAnOutsideEntityAppHasControlAndIsInAMenuOrModifyingSettings(2);
+  cameraExternalControlAnOutsideEntityAppHasControlAndIsInAMenuOrModifyingSettings(
+    2,
+  );
 
   const CameraControlId(this.value);
 
@@ -703,6 +863,7 @@ enum CameraControlId {
 enum UsbControlled {
   /// Upstream name: `DISABLED`
   disabled(0),
+
   /// Upstream name: `ENABLED`
   enabled(1);
 

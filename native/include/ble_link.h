@@ -172,7 +172,7 @@ class LinkMachine {
   void reset();
 
  private:
-  [[nodiscard]] LinkState classify(const LinkObservation& obs) const;
+  [[nodiscard]] static LinkState classify(const LinkObservation& obs);
   [[nodiscard]] uint32_t backoff_ms() const;
 
   LinkConfig cfg_;

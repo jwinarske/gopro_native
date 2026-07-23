@@ -111,7 +111,9 @@ void main() {
   });
 
   test('departure decodes the cached record', () {
-    final event = GlazeCodec.decodeEvent(buildRecord(kind: 0x02, readiness: 0))!;
+    final event = GlazeCodec.decodeEvent(
+      buildRecord(kind: 0x02, readiness: 0),
+    )!;
     expect(event.kind, EventKind.left);
     expect(event.camera!.readiness, Readiness.absent);
     expect(event.camera!.isReady, isFalse);
