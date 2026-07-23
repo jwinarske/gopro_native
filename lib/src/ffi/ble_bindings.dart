@@ -10,6 +10,7 @@ import 'package:ffi/ffi.dart';
 
 import '../internal/library_loader.dart';
 import 'ble_codec.dart';
+import 'bindings.dart';
 import 'link_types.dart';
 
 class BleBindings {
@@ -74,6 +75,9 @@ class BleBindings {
         int Function(Pointer<Void>)
       >('gopro_ble_ready');
 
+  /// The session posts to `eventsPort`, so the DL API table has to be
+  /// resolved first. Both bridges live in the same library and share it.
+  ///
   /// Every duration may be zero to accept the native default. [writeTimeout]
   /// bounds the wait for a response; [queueTimeout] bounds the wait before
   /// that, while a command is held behind the ready gate.
@@ -83,6 +87,7 @@ class BleBindings {
     Duration writeTimeout = Duration.zero,
     Duration queueTimeout = Duration.zero,
   }) {
+    GoProBindings.init();
     return _create(
       eventsPort,
       keepAlive.inMilliseconds,
