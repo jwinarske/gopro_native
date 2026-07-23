@@ -73,6 +73,21 @@ struct CommandQueueOptions {
   /// configurable"; there is no reason for that, and slow operations on a
   /// busy camera legitimately exceed it.
   uint32_t write_timeout_ms = 5000;
+
+  /// Milliseconds a kQueued command may wait for the ready gate before it is
+  /// abandoned with kTimedOut.
+  ///
+  /// Without this a command behind a gate that never opens waits forever,
+  /// and the caller has no reply and no error to act on. The gate starts
+  /// closed -- both statuses are unknown until the camera reports them -- so
+  /// that is the state a fresh session is in, not an exotic one.
+  ///
+  /// Generous rather than tight, because a closed gate is often legitimate:
+  /// the camera really is encoding. A command that must go out during a long
+  /// encode belongs at kFastpass, which is not gated at all.
+  ///
+  /// Zero disables the deadline and restores the indefinite wait.
+  uint32_t queue_timeout_ms = 30000;
 };
 
 class CommandQueue {
@@ -133,6 +148,7 @@ class CommandQueue {
     std::vector<uint8_t> payload;
     Priority priority{Priority::kQueued};
     CompletionFn done;
+    uint64_t queued_at_ms{0};
     uint64_t sent_at_ms{0};
   };
 

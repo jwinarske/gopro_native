@@ -85,7 +85,8 @@ extern "C" {
 
 void* gopro_ble_create(int64_t events_port,
                        uint32_t keep_alive_ms,
-                       uint32_t write_timeout_ms) {
+                       uint32_t write_timeout_ms,
+                       uint32_t queue_timeout_ms) {
   auto ctx = std::make_unique<BleContext>();
   ctx->events_port = events_port;
 
@@ -95,6 +96,9 @@ void* gopro_ble_create(int64_t events_port,
   }
   if (write_timeout_ms != 0) {
     cfg.queue.write_timeout_ms = write_timeout_ms;
+  }
+  if (queue_timeout_ms != 0) {
+    cfg.queue.queue_timeout_ms = queue_timeout_ms;
   }
 
   const Dart_Port_DL port = events_port;
