@@ -255,6 +255,7 @@ final camera = await transport.connect();
 final busy = await camera.queryStatuses([8, 10]);
 camera.readyChanges.listen((open) => print('ready gate ${open ? 'open' : 'shut'}'));
 camera.pushes.listen(print);
+camera.faults.listen(print);   // optional; why a command went unanswered
 ```
 
 `connect()` walks the ladder above, and a failure throws a
