@@ -456,6 +456,41 @@ Neither `ApCredentials.toString` nor the manual controller's instruction
 contains the passphrase, and `nmcli` output is scrubbed of it before it
 reaches an exception.
 
+## DEBUG NOTE — pairing needs an agent, and says nothing when it is missing
+
+BlueZ cannot complete pairing without a registered agent. Without one,
+`Device.Pair` returns, the bond never forms, discovery still works, and
+`StartNotify` then returns success while `Notifying` stays false. Nothing in
+that sequence mentions pairing.
+
+`GoProBleTransport.start()` registers one. It answers only for the device
+bring-up is currently pairing with and refuses everything else — an agent
+that accepts anything will bond this host to whatever asks while it is
+running. The cameras use Just Works, so there is nothing to display or
+confirm; the agent exists to answer at all.
+
+This is why the first pairing in this project had to be done through
+`bluetoothctl`, which registers its own agent. It looked like the camera
+needing pairing mode, and pairing mode is indeed needed — but an agent is
+needed too, and only one of the two announces itself.
+
+## DEBUG NOTE — a bring-up timeout shorter than the ladder's hides the cause
+
+The state machine's stages are sequential and total 95 s at the defaults: 10 s
+to connect, 15 s for services, 60 s to encrypt, 10 s to subscribe. A 60 s
+deadline on `connect()` expires at the same instant the encrypt stage would
+have reported `notEncrypted`, so the caller gets
+
+```
+GoProBleException(stalled at servicesResolved: none)
+timed out during bring-up
+```
+
+`stall: none` — the machine never got to speak. The whole point of it is to
+say *"the LE bond is missing or stale: remove the pairing, put the camera in
+pairing mode"*. The default is 120 s now, and a bare timeout derives its
+message from the stage reached rather than discarding it.
+
 ## DEBUG NOTE — the ready gate has to be opened
 
 The gate is derived from the BUSY and ENCODING statuses, and both start
@@ -616,6 +651,22 @@ reassembly at the negotiated 517-byte MTU, correlation and response routing,
 the ready gate deriving from a status query, teardown, and recovery from a
 forced disconnect across repeated cycles.
 
+COHN is validated end to end against a HERO13 Black on a real network:
+provisioning returns a username, passphrase and a 1318-byte certificate;
+those are written `0600` and read back identical; and a pinned `CohnHttp`
+then answers over HTTPS —
+
+```
+api version : 2.0
+model       : HERO13 Black fw=H24.01.02.10.00
+busy=0 encoding=0 battery=9%
+wrong cert refused: HandshakeException
+```
+
+That last line is the one that matters: a client pinned to an unrelated CA is
+refused by the same camera, so the pinning is doing work rather than merely
+not getting in the way.
+
 The HTTP command surface is validated over USB against a HERO13 Black
 (firmware `H24.01.02.10.00`): camera info, state (79 statuses, 120
 settings), date and time, media list and metadata, last captured, thumbnail,
@@ -668,9 +719,13 @@ Scanning is validated against a MAX2: six networks found across a 2.4 and 5
 GHz mix, decoded with signal strength, frequency and flags, through the
 notification path rather than a reply.
 
-Joining a network is not exercised — that needs credentials for a real
-network. Neither, consequently, is the COHN provisioning round trip that
-depends on it.
+Joining a network is validated against a HERO13 Black: `connect()` joined it
+to a network the camera already had credentials for in ~6 s, reporting
+`PROVISIONING_SUCCESS_NEW_AP`, with association confirmed by a second scan.
+No passphrase is involved on that path — the `configured` scan flag is
+exactly the case where the camera supplies its own.
+
+`connectNew`, which does take a passphrase, is unit tested only.
 
 ## License
 
