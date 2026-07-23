@@ -19,22 +19,61 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
         with: { sdk: stable }
+
+      # Skip cleanly when this version is already on pub.dev.
+      #
+      # A version cannot be published twice, so without this a re-pushed tag,
+      # or the tag for a version that was first published by hand (which every
+      # package's initial version must be), fails the job on "already exists".
+      # That failure carries no information — the version is where it should
+      # be. Checked against pub.dev rather than assumed, so the guard tracks
+      # what is actually published rather than what the tag claims.
+      #
+      # The tag must also match the version in pubspec.yaml. Publishing reads
+      # the version from pubspec, not the tag, so a mismatched tag would
+      # otherwise publish something other than what it names.
+      - name: Decide whether to publish
+        id: gate
+        run: |
+          version=$(awk '/^version:/ {print $2; exit}' pubspec.yaml)
+          tag="${GITHUB_REF_NAME#v}"
+          echo "pubspec version: $version   tag: $tag"
+          if [ "$version" != "$tag" ]; then
+            echo "::error::tag v$tag does not match pubspec version $version"
+            exit 1
+          fi
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            "https://pub.dev/api/packages/gopro_native/versions/$version" || echo 000)
+          if [ "$code" = "200" ]; then
+            echo "gopro_native $version is already on pub.dev; nothing to do."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "gopro_native $version is not on pub.dev (HTTP $code); will publish."
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
       # The build hook drives CMake for the native library. libusb is this
       # package's own dependency; libsystemd is the bluez_native build hook's,
       # which runs as part of `dart pub get`. Without them the resolve fails
       # before publishing is ever attempted.
       - name: Install deps
+        if: steps.gate.outputs.publish == 'true'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build pkg-config libusb-1.0-0-dev libsystemd-dev
-      - run: dart pub get
-      - run: dart analyze --fatal-infos
-      - run: dart test
+      - if: steps.gate.outputs.publish == 'true'
+        run: dart pub get
+      - if: steps.gate.outputs.publish == 'true'
+        run: dart analyze --fatal-infos
+      - if: steps.gate.outputs.publish == 'true'
+        run: dart test
       # Dry-run first — fails the job if any pub.dev requirement is unmet,
       # so a broken release does not reach the upload step.
-      - run: dart pub publish --dry-run
+      - if: steps.gate.outputs.publish == 'true'
+        run: dart pub publish --dry-run
       # OIDC publish: no stored credentials. Requires automated publishing to
       # be enabled for this package in the pub.dev admin console, and only
       # after the first version has been uploaded by a human.
-      - run: dart pub publish --force
+      - if: steps.gate.outputs.publish == 'true'
+        run: dart pub publish --force
