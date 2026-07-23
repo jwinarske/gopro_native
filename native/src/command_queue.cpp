@@ -9,19 +9,26 @@ namespace gp::ble {
 
 std::string_view to_string(Priority p) {
   switch (p) {
-    case Priority::kQueued: return "queued";
-    case Priority::kFastpass: return "fastpass";
-    case Priority::kKeepAlive: return "keep-alive";
+    case Priority::kQueued:
+      return "queued";
+    case Priority::kFastpass:
+      return "fastpass";
+    case Priority::kKeepAlive:
+      return "keep-alive";
   }
   return "?";
 }
 
 std::string_view to_string(Outcome o) {
   switch (o) {
-    case Outcome::kResponded: return "responded";
-    case Outcome::kTimedOut: return "timed-out";
-    case Outcome::kCanceled: return "canceled";
-    case Outcome::kRejected: return "rejected";
+    case Outcome::kResponded:
+      return "responded";
+    case Outcome::kTimedOut:
+      return "timed-out";
+    case Outcome::kCanceled:
+      return "canceled";
+    case Outcome::kRejected:
+      return "rejected";
   }
   return "?";
 }
@@ -37,7 +44,8 @@ bool CommandQueue::is_in_flight(CorrelationId id) const {
 bool CommandQueue::can_send(const Entry& e) const {
   // Responses are matched by correlation id alone, so the same id may never be
   // outstanding twice -- regardless of priority.
-  if (is_in_flight(e.id)) return false;
+  if (is_in_flight(e.id))
+    return false;
 
   switch (e.priority) {
     case Priority::kKeepAlive:
@@ -47,7 +55,8 @@ bool CommandQueue::can_send(const Entry& e) const {
       // Ignores readiness, but does not stampede: still one at a time.
       return true;
     case Priority::kQueued:
-      if (!ready_) return false;
+      if (!ready_)
+        return false;
       // Serialize against other ordinary commands. Keep-alive and fastpass
       // traffic in flight does not block ordinary work, and vice versa.
       return std::none_of(
@@ -76,7 +85,8 @@ void CommandQueue::pump(uint64_t now_ms) {
   while (progressed) {
     progressed = false;
     for (auto it = pending_.begin(); it != pending_.end(); ++it) {
-      if (!can_send(*it)) continue;
+      if (!can_send(*it))
+        continue;
       Entry e = std::move(*it);
       pending_.erase(it);
       send(std::move(e), now_ms);
@@ -86,15 +96,18 @@ void CommandQueue::pump(uint64_t now_ms) {
   }
 }
 
-bool CommandQueue::submit(CorrelationId id, std::vector<uint8_t> payload,
-                          Priority priority, CompletionFn done,
+bool CommandQueue::submit(CorrelationId id,
+                          std::vector<uint8_t> payload,
+                          Priority priority,
+                          CompletionFn done,
                           uint64_t now_ms) {
   const bool duplicate =
       is_in_flight(id) ||
       std::any_of(pending_.begin(), pending_.end(),
                   [id](const Entry& e) { return e.id == id; });
   if (duplicate) {
-    if (done) done(Outcome::kRejected, {});
+    if (done)
+      done(Outcome::kRejected, {});
     return false;
   }
 
@@ -119,10 +132,12 @@ bool CommandQueue::submit(CorrelationId id, std::vector<uint8_t> payload,
 
 void CommandQueue::set_ready(bool ready, uint64_t now_ms) {
   ready_ = ready;
-  if (ready_) pump(now_ms);
+  if (ready_)
+    pump(now_ms);
 }
 
-bool CommandQueue::on_response(CorrelationId id, std::span<const uint8_t> data,
+bool CommandQueue::on_response(CorrelationId id,
+                               std::span<const uint8_t> data,
                                uint64_t now_ms) {
   const auto it = std::find_if(in_flight_.begin(), in_flight_.end(),
                                [id](const Entry& e) { return e.id == id; });
@@ -134,7 +149,8 @@ bool CommandQueue::on_response(CorrelationId id, std::span<const uint8_t> data,
 
   CompletionFn done = std::move(it->done);
   in_flight_.erase(it);
-  if (done) done(Outcome::kResponded, data);
+  if (done)
+    done(Outcome::kResponded, data);
 
   pump(now_ms);
   return true;
@@ -153,7 +169,8 @@ void CommandQueue::tick(uint64_t now_ms) {
     }
   }
   for (auto& done : expired) {
-    if (done) done(Outcome::kTimedOut, {});
+    if (done)
+      done(Outcome::kTimedOut, {});
   }
 
   pump(now_ms);
@@ -161,12 +178,15 @@ void CommandQueue::tick(uint64_t now_ms) {
 
 void CommandQueue::cancel_all() {
   std::vector<CompletionFn> canceled;
-  for (auto& e : in_flight_) canceled.push_back(std::move(e.done));
-  for (auto& e : pending_) canceled.push_back(std::move(e.done));
+  for (auto& e : in_flight_)
+    canceled.push_back(std::move(e.done));
+  for (auto& e : pending_)
+    canceled.push_back(std::move(e.done));
   in_flight_.clear();
   pending_.clear();
   for (auto& done : canceled) {
-    if (done) done(Outcome::kCanceled, {});
+    if (done)
+      done(Outcome::kCanceled, {});
   }
 }
 

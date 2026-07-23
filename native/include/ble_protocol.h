@@ -83,21 +83,22 @@ inline constexpr size_t kAttOverhead = 3;
 /// Returns an empty vector if `data` is empty or longer than kMaxMessageLen,
 /// or if `att_payload` is too small to carry a header plus at least one byte.
 [[nodiscard]] std::vector<std::vector<uint8_t>> fragment(
-    std::span<const uint8_t> data, size_t att_payload = kMinAttPayload);
+    std::span<const uint8_t> data,
+    size_t att_payload = kMinAttPayload);
 
 // ---------------------------------------------------------------------------
 // Receive
 // ---------------------------------------------------------------------------
 
 enum class FeedResult {
-  kNeedMore,       ///< accepted; message still incomplete
-  kComplete,       ///< accepted; take() now yields the message
-  kEmptyPacket,    ///< zero-length packet
-  kTruncatedHdr,   ///< packet too short to contain its own header
-  kReservedHdr,    ///< header type 0b11
-  kStrayCont,      ///< continuation packet with no message in progress
-  kOverflow,       ///< payload exceeded the declared length
-  kZeroLength,     ///< header declared a zero-length message
+  kNeedMore,      ///< accepted; message still incomplete
+  kComplete,      ///< accepted; take() now yields the message
+  kEmptyPacket,   ///< zero-length packet
+  kTruncatedHdr,  ///< packet too short to contain its own header
+  kReservedHdr,   ///< header type 0b11
+  kStrayCont,     ///< continuation packet with no message in progress
+  kOverflow,      ///< payload exceeded the declared length
+  kZeroLength,    ///< header declared a zero-length message
 };
 
 [[nodiscard]] std::string_view to_string(FeedResult r);

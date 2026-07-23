@@ -20,7 +20,8 @@ add_library(dart_api_dl OBJECT src/dart_api_dl.c)
 target_include_directories(dart_api_dl PUBLIC include)
 
 # ── BLE protocol core — pure logic, no libusb, no BlueZ, no Dart ────────────
-add_library(gopro_ble STATIC src/ble_protocol.cpp src/command_queue.cpp src/ble_link.cpp)
+add_library(gopro_ble STATIC src/ble_protocol.cpp src/command_queue.cpp src/ble_link.cpp
+                            src/query_parser.cpp)
 target_include_directories(gopro_ble PUBLIC include)
 target_compile_options(gopro_ble PRIVATE -Wall -Wextra -Wpedantic)
 
@@ -40,6 +41,11 @@ target_link_libraries(ble_link_test PRIVATE gopro_ble)
 target_compile_options(ble_link_test PRIVATE -Wall -Wextra -Wpedantic)
 add_test(NAME ble_link COMMAND ble_link_test)
 
+add_executable(query_parser_test test/query_parser_test.cpp)
+target_link_libraries(query_parser_test PRIVATE gopro_ble)
+target_compile_options(query_parser_test PRIVATE -Wall -Wextra -Wpedantic)
+add_test(NAME query_parser COMMAND query_parser_test)
+
 # ── Discovery core, standalone-testable without Dart ────────────────────────
 add_library(gopro_usb STATIC src/gopro_usb.cpp)
 target_include_directories(gopro_usb PUBLIC include)
@@ -53,6 +59,7 @@ add_library(gopro_nc SHARED
     src/ble_protocol.cpp
     src/command_queue.cpp
     src/ble_link.cpp
+    src/query_parser.cpp
     $<TARGET_OBJECTS:dart_api_dl>
 )
 target_include_directories(gopro_nc PUBLIC include)

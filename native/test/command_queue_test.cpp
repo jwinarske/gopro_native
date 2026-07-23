@@ -33,14 +33,17 @@ using gp::ble::Priority;
 struct Recorder {
   std::vector<uint64_t> sent;
   CommandQueue::WriteFn fn() {
-    return [this](uint64_t id, std::span<const uint8_t>) { sent.push_back(id); };
+    return
+        [this](uint64_t id, std::span<const uint8_t>) { sent.push_back(id); };
   }
   bool sent_ids(const std::vector<uint64_t>& expect) const {
     return sent == expect;
   }
 };
 
-std::vector<uint8_t> body(uint8_t b = 0xAA) { return {b}; }
+std::vector<uint8_t> body(uint8_t b = 0xAA) {
+  return {b};
+}
 
 void test_ready_gate() {
   std::printf("ready gate\n");
@@ -97,9 +100,9 @@ void test_keep_alive_jumps_the_queue() {
   CommandQueue q(rec.fn());
   q.set_ready(true, 0);
 
-  q.submit(1, body(), Priority::kQueued, nullptr, 0);   // goes out immediately
-  q.submit(2, body(), Priority::kQueued, nullptr, 0);   // queued behind it
-  q.submit(3, body(), Priority::kQueued, nullptr, 0);   // and behind that
+  q.submit(1, body(), Priority::kQueued, nullptr, 0);  // goes out immediately
+  q.submit(2, body(), Priority::kQueued, nullptr, 0);  // queued behind it
+  q.submit(3, body(), Priority::kQueued, nullptr, 0);  // and behind that
   q.submit(66, body(), Priority::kKeepAlive, nullptr, 0);
 
   // Keep-alive overtakes the backlog rather than waiting its turn.
@@ -131,8 +134,9 @@ void test_single_flight_per_id() {
 
   Outcome first_outcome = Outcome::kCanceled;
   Outcome dup_outcome = Outcome::kCanceled;
-  q.submit(7, body(), Priority::kQueued,
-           [&](Outcome o, std::span<const uint8_t>) { first_outcome = o; }, 0);
+  q.submit(
+      7, body(), Priority::kQueued,
+      [&](Outcome o, std::span<const uint8_t>) { first_outcome = o; }, 0);
   const bool accepted = q.submit(
       7, body(), Priority::kQueued,
       [&](Outcome o, std::span<const uint8_t>) { dup_outcome = o; }, 0);
@@ -159,11 +163,13 @@ void test_response_routing() {
   q.set_ready(true, 0);
 
   std::vector<uint8_t> got;
-  q.submit(5, body(), Priority::kQueued,
-           [&](Outcome o, std::span<const uint8_t> d) {
-             if (o == Outcome::kResponded) got.assign(d.begin(), d.end());
-           },
-           0);
+  q.submit(
+      5, body(), Priority::kQueued,
+      [&](Outcome o, std::span<const uint8_t> d) {
+        if (o == Outcome::kResponded)
+          got.assign(d.begin(), d.end());
+      },
+      0);
 
   const std::vector<uint8_t> payload = {0xDE, 0xAD, 0xBE, 0xEF};
   check(q.on_response(5, payload, 10), "matching response is consumed");
@@ -182,8 +188,9 @@ void test_timeout() {
   q.set_ready(true, 0);
 
   Outcome outcome = Outcome::kResponded;
-  q.submit(1, body(), Priority::kQueued,
-           [&](Outcome o, std::span<const uint8_t>) { outcome = o; }, 0);
+  q.submit(
+      1, body(), Priority::kQueued,
+      [&](Outcome o, std::span<const uint8_t>) { outcome = o; }, 0);
   q.submit(2, body(), Priority::kQueued, nullptr, 0);
 
   q.tick(4999);
@@ -205,7 +212,8 @@ void test_cancel_all() {
 
   int canceled = 0;
   const auto counter = [&](Outcome o, std::span<const uint8_t>) {
-    if (o == Outcome::kCanceled) ++canceled;
+    if (o == Outcome::kCanceled)
+      ++canceled;
   };
   q.submit(1, body(), Priority::kQueued, counter, 0);  // in flight
   q.submit(2, body(), Priority::kQueued, counter, 0);  // pending
