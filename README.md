@@ -37,6 +37,7 @@ surface on the wired path.
 | `lib/proto/*.dart` | protobuf, split per feature so descriptors tree shake |
 | `lib/src/cohn/` | COHN provisioning, credential storage, pinned TLS |
 | `lib/src/wifi/` | camera access point, host join behind an interface |
+| `lib/src/streaming/` | livestream over BLE, webcam over HTTP |
 
 Events are posted from a native worker thread via `Dart_PostCObject_DL`,
 which is thread-safe and callable from any thread. Dart never pumps anything.
@@ -471,6 +472,43 @@ accepting commands rather than a gate nobody opened.
 `connect()` now issues that query as soon as the link is up. If you build a
 session by another route, issue it yourself.
 
+## Livestream and webcam
+
+Neither puts a video frame through this process, and neither should. The
+camera streams straight to the RTMP server, or straight to the host socket as
+a transport stream. Dart brokers the configuration and stays out of the data
+path.
+
+```dart
+final live = LivestreamClient(camera);
+final caps = await live.status();       // sizes, lenses, bitrate bounds
+await live.configure(url: 'rtmp://…', windowSize: EnumWindowSize.WINDOW_SIZE_1080);
+await live.waitUntilReady();
+await live.start();
+
+final webcam = WebcamClient(commands);
+await webcam.start(resolution: WebcamResolution.res1080, fov: WebcamFOV.linear);
+```
+
+`status()` is worth reading before configuring: it reports what the current
+lens configuration actually supports, which is not the same on every camera.
+A MAX2 reports 800–10000 Kbps, three window sizes and three lenses.
+
+The livestream URL is treated as a secret. A stream key is usually embedded
+in it and anyone holding it can publish as you, so it is never logged and
+does not appear in an exception.
+
+Webcam resolution, field of view, protocol, status and error are now
+generated from upstream rather than passed as integers. `WebcamProtocol` is
+string-valued (`TS`, `RTSP`), which is why `tool/gen_constants.py` grew
+support for enums whose members are not numbers. `StreamType` is skipped and
+says so: its members are `enum.auto()`, so its numbers are Python's rather
+than the camera's.
+
+An unrecognized webcam status or error decodes to null rather than throwing.
+Firmware newer than these tables will send values this build has no name for,
+and losing a reply over one field is worse than not naming it.
+
 ## COHN
 
 Camera On the Home Network: the camera reachable over an existing network
@@ -547,9 +585,10 @@ recognized"*, and `gopro/media/screennail` answers 400 for a video. Both
 reproduce identically under `curl`, so they are the camera's answer rather
 than a malformed request; the exceptions carry the camera's own message.
 
-Generated sources cover 477 settings, 175 statuses, 100 protocol constants
-(`tool/gen_constants.py`), 40 HTTP messages (`tool/gen_http_commands.py`) and
-11 protobuf definitions (`tool/gen_proto.py`).
+Generated sources cover 477 settings, 175 statuses, 100 protocol constants,
+23 streaming values (`tool/gen_constants.py`), 40 HTTP messages
+(`tool/gen_http_commands.py`) and 11 protobuf definitions
+(`tool/gen_proto.py`).
 
 The protobuf layer is validated over BLE against a MAX2: a Get Preset Status
 request returned 564 bytes across the reassembler, correctly correlated, and
@@ -569,8 +608,16 @@ The camera access point is validated on a MAX2: SSID and passphrase read
 over BLE, AP status 69 driven from 0 to 1 and back, the camera left as it was
 found.
 
-Not yet implemented: joining the camera to an existing network, livestream
-and webcam control.
+Livestream configuration is validated against a MAX2 as far as it can be
+without a network: status decodes to state, error, encode and lens support,
+an 800–10000 Kbps range, three window sizes and three lenses. Configuring and
+starting a stream needs the camera on a network with a route to an RTMP
+server, so that is not exercised.
+
+The webcam surface is unit tested only — it is USB-attached, and the camera
+that supports it was not attached when this was written.
+
+Not yet implemented: joining the camera to an existing network.
 
 ## License
 
