@@ -13,6 +13,7 @@
 import 'dart:convert';
 
 import '../../proto/cohn.dart';
+import '../secret.dart';
 import '../ble_transport.dart';
 import '../ffi/ble_codec.dart';
 import '../generated/constants.dart';
@@ -159,7 +160,7 @@ class CohnClient {
         }
         return CohnCredentials(
           username: s.username,
-          password: s.password,
+          password: Secret(s.password),
           certificate: await certificate(),
           ipAddress: s.hasIpaddress() ? s.ipaddress : null,
           ssid: s.hasSsid() ? s.ssid : null,

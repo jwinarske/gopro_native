@@ -11,6 +11,7 @@
 import 'dart:convert';
 
 import '../ble_transport.dart';
+import '../secret.dart';
 import '../ffi/ble_codec.dart';
 import '../generated/constants.dart';
 import 'wifi_controller.dart';
@@ -41,11 +42,17 @@ class GoProAccessPoint {
   /// Both are readable without the access point being on, so this can be
   /// called before [enable].
   Future<ApCredentials> credentials() async {
-    final ssid = await camera.readCharacteristic(kWifiApSsidUuid);
-    final password = await camera.readCharacteristic(kWifiApPasswordUuid);
+    // The passphrase goes straight into a Secret without being bound to a
+    // name first. A local holding it as plain bytes is one more place it can
+    // be picked up from, and naming it invites exactly that.
     return ApCredentials(
-      ssid: _text(ssid, 'SSID'),
-      password: _text(password, 'passphrase'),
+      ssid: _text(await camera.readCharacteristic(kWifiApSsidUuid), 'SSID'),
+      password: Secret(
+        _text(
+          await camera.readCharacteristic(kWifiApPasswordUuid),
+          'passphrase',
+        ),
+      ),
     );
   }
 
