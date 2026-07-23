@@ -123,6 +123,13 @@ jobs:
       # sources silently disagreeing with tool/upstream.
       - run: tool/gen_constants.py --check
       - run: tool/gen_http_commands.py --check
+      # protoc-gen-dart is a pub global package; its shim needs dart on PATH.
+      - name: Install protoc and the Dart plugin
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends protobuf-compiler
+          dart pub global activate protoc_plugin
+      - run: PATH="$HOME/.pub-cache/bin:$PATH" tool/gen_proto.py --check
 
   # ── The enumerate-only invariant ─────────────────────────────────────────
   invariant:
