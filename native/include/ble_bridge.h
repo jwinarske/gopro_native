@@ -64,6 +64,29 @@ GOPRO_EXPORT void* gopro_ble_create(int64_t events_port,
                                     uint32_t write_timeout_ms,
                                     uint32_t queue_timeout_ms);
 
+/// Submits a protobuf command, framed as `[feature][action][message]`.
+///
+/// `message` is the encoded protobuf alone; the two header bytes are
+/// prepended natively. It may be empty — several requests have no fields.
+///
+/// Correlated on both header bytes, unlike gopro_ble_submit, because every
+/// request in a feature shares its leading byte. The correlation id reported
+/// with the response is the one gopro_ble_protobuf_correlation returns.
+GOPRO_EXPORT int32_t gopro_ble_submit_protobuf(void* handle,
+                                               uint8_t channel,
+                                               uint8_t feature_id,
+                                               uint8_t action_id,
+                                               const uint8_t* message,
+                                               int32_t len,
+                                               uint8_t priority,
+                                               uint64_t now_ms);
+
+/// The correlation id a protobuf submission will report, so a caller can
+/// match a response without reimplementing the layout.
+GOPRO_EXPORT uint64_t gopro_ble_protobuf_correlation(uint8_t channel,
+                                                     uint8_t feature_id,
+                                                     uint8_t action_id);
+
 GOPRO_EXPORT void gopro_ble_destroy(void* handle);
 
 /// Feeds one GATT notification. `channel` is a gp::ble::Channel value.

@@ -377,6 +377,34 @@ their own reply contains would be a poor trade for the descriptors it saves.
 Every `.proto` must be assigned to a group in the generator; one that is not
 is an error rather than a file that quietly never gets exported.
 
+### Sending one over BLE
+
+A protobuf message is framed `[feature id][action id][encoded message]`, and
+the reply carries the same header with the action id's high bit set — 111
+becomes 239, 103 becomes 231.
+
+```dart
+final reply = await camera.sendProtobuf(
+  FeatureId.query.value,              // 0xF5
+  ActionId.getPresetStatus.value,     // 114, reply 242
+  request.writeToBuffer(),
+  channel: BleChannel.query,
+);
+final status = NotifyPresetStatus.fromBuffer(reply.payload.sublist(2));
+```
+
+**Correlation is two bytes wide for protobuf.** Every request within a
+feature shares its leading byte, so correlating on that alone would make all
+of COHN one command — they would serialize against each other for no reason,
+and a registered notification arriving on that feature would resolve whatever
+unrelated request happened to be outstanding. `sendProtobuf` correlates on
+feature *and* action; the two id spaces are kept disjoint by a bit that no
+one-byte id carries, checked exhaustively in `test/protobuf_correlation_test.dart`.
+
+The channel matters and is not implied by the feature: query-feature messages
+ride the query characteristic pair. Sent on the command pair, a MAX2 answers
+nothing and emits a bare `f5 02` push instead.
+
 **`required` is not enforced on serialization.** These are `proto2`, and the
 Dart runtime does not check required fields when writing:
 
@@ -418,9 +446,16 @@ than a malformed request; the exceptions carry the camera's own message.
 
 Generated sources cover 477 settings, 175 statuses, 100 protocol constants
 (`tool/gen_constants.py`), 40 HTTP messages (`tool/gen_http_commands.py`) and
-11 protobuf definitions (`tool/gen_proto.py`). The protobuf layer is
-generated and unit tested but not yet driven against a camera: nothing sends
-one of these messages yet.
+11 protobuf definitions (`tool/gen_proto.py`).
+
+The protobuf layer is validated over BLE against a MAX2: a Get Preset Status
+request returned 564 bytes across the reassembler, correctly correlated, and
+decoded to 3 preset groups and 13 presets with mode and title enums
+resolving.
+
+COHN is not implemented by that camera. Get COHN Status times out with no
+reply at all, on the same feature and characteristic where preset status
+answers, so it is the camera and not the framing.
 
 Not yet implemented: COHN, and Wi-Fi.
 
