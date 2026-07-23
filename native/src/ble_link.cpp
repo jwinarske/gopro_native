@@ -92,7 +92,7 @@ void LinkMachine::note_attempt_failed(uint64_t now_ms) {
   last_failure_ms_ = now_ms;
 }
 
-LinkState LinkMachine::classify(const LinkObservation& obs) const {
+LinkState LinkMachine::classify(const LinkObservation& obs) {
   if (!obs.connected) {
     return obs.le_candidate_present ? LinkState::kAdvertising
                                     : LinkState::kAbsent;

@@ -147,7 +147,7 @@ void* gopro_discovery_create(int64_t events_port, uint16_t vid) {
   ctx->disco = gp::Discovery::create(vid == 0 ? gp::kGoProVid : vid);
   if (!ctx->disco)
     return nullptr;
-  if (!ctx->disco->hotplug_supported())
+  if (!gp::Discovery::hotplug_supported())
     return nullptr;
 
   BridgeContext* raw = ctx.get();

@@ -28,7 +28,10 @@ import argparse
 import ast
 import pathlib
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 
 GOPRO_COPYRIGHT = "Copyright © 2021-2024 GoPro, Inc."
 
@@ -290,6 +293,31 @@ def emit_module(enums: list[ParsedEnum], source: str) -> str:
 
 # ---------------------------------------------------------------------------
 
+def dart_format(text: str) -> str:
+    """Runs the emitted source through `dart format`.
+
+    Without this the committed files are reformatted by `dart format` in CI
+    and --check then reports drift forever, because the generator and the
+    formatter disagree about the same content. Falls back to the raw text
+    when the Dart SDK is unavailable.
+    """
+    dart = shutil.which("dart")
+    if dart is None:
+        print("warning: dart not found; emitting unformatted source",
+              file=sys.stderr)
+        return text
+    with tempfile.TemporaryDirectory() as tmp:
+        f = pathlib.Path(tmp) / "gen.dart"
+        f.write_text(text)
+        r = subprocess.run([dart, "format", str(f)],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            print(f"warning: dart format failed: {r.stderr.strip()}",
+                  file=sys.stderr)
+            return text
+        return f.read_text()
+
+
 MODULES = {
     "settings.py": "settings.dart",
     "statuses.py": "statuses.dart",
@@ -341,7 +369,7 @@ def main() -> int:
     for src, dst in MODULES.items():
         enums = parsed[src]
         try:
-            text = emit_module(enums, src)
+            text = dart_format(emit_module(enums, src))
         except GenError as e:
             # Emission-time failures (name or value collisions) are as much a
             # user error as parse failures -- report them the same way rather
