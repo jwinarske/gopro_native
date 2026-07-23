@@ -6,14 +6,22 @@ namespace gp::ble {
 
 std::string_view to_string(FeedResult r) {
   switch (r) {
-    case FeedResult::kNeedMore: return "need-more";
-    case FeedResult::kComplete: return "complete";
-    case FeedResult::kEmptyPacket: return "empty-packet";
-    case FeedResult::kTruncatedHdr: return "truncated-header";
-    case FeedResult::kReservedHdr: return "reserved-header";
-    case FeedResult::kStrayCont: return "stray-continuation";
-    case FeedResult::kOverflow: return "overflow";
-    case FeedResult::kZeroLength: return "zero-length";
+    case FeedResult::kNeedMore:
+      return "need-more";
+    case FeedResult::kComplete:
+      return "complete";
+    case FeedResult::kEmptyPacket:
+      return "empty-packet";
+    case FeedResult::kTruncatedHdr:
+      return "truncated-header";
+    case FeedResult::kReservedHdr:
+      return "reserved-header";
+    case FeedResult::kStrayCont:
+      return "stray-continuation";
+    case FeedResult::kOverflow:
+      return "overflow";
+    case FeedResult::kZeroLength:
+      return "zero-length";
   }
   return "?";
 }
@@ -25,7 +33,8 @@ std::string_view to_string(FeedResult r) {
 std::vector<std::vector<uint8_t>> fragment(std::span<const uint8_t> data,
                                            size_t att_payload) {
   std::vector<std::vector<uint8_t>> out;
-  if (data.empty() || data.size() > kMaxMessageLen) return out;
+  if (data.empty() || data.size() > kMaxMessageLen)
+    return out;
 
   const size_t len = data.size();
 
@@ -50,7 +59,8 @@ std::vector<std::vector<uint8_t>> fragment(std::span<const uint8_t> data,
   // Every fragment must carry at least one payload byte, or fragmentation
   // never terminates. The continuation header is one byte, so the binding
   // constraint is the larger first header.
-  if (att_payload <= first_hdr.size()) return out;
+  if (att_payload <= first_hdr.size())
+    return out;
 
   size_t offset = 0;
   bool first = true;
@@ -116,8 +126,8 @@ FeedResult Reassembler::feed(std::span<const uint8_t> packet) {
           reset();
           return FeedResult::kTruncatedHdr;
         }
-        declared_ = (static_cast<size_t>(packet[0] & kExt13Byte0Mask) << 8) |
-                    packet[1];
+        declared_ =
+            (static_cast<size_t>(packet[0] & kExt13Byte0Mask) << 8) | packet[1];
         payload_start = 2;
         break;
       case PacketHeader::kExt16:
@@ -155,7 +165,8 @@ FeedResult Reassembler::feed(std::span<const uint8_t> packet) {
     return FeedResult::kOverflow;
   }
 
-  buf_.insert(buf_.end(), packet.begin() + static_cast<ptrdiff_t>(payload_start),
+  buf_.insert(buf_.end(),
+              packet.begin() + static_cast<ptrdiff_t>(payload_start),
               packet.end());
   remaining_ -= payload_len;
 

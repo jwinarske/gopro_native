@@ -145,8 +145,10 @@ void* gopro_discovery_create(int64_t events_port, uint16_t vid) {
   auto ctx = std::make_unique<BridgeContext>();
   ctx->events_port = events_port;
   ctx->disco = gp::Discovery::create(vid == 0 ? gp::kGoProVid : vid);
-  if (!ctx->disco) return nullptr;
-  if (!ctx->disco->hotplug_supported()) return nullptr;
+  if (!ctx->disco)
+    return nullptr;
+  if (!ctx->disco->hotplug_supported())
+    return nullptr;
 
   BridgeContext* raw = ctx.get();
   const bool ok = raw->disco->watch([raw](const gp::Camera& c, bool arrived) {
@@ -168,28 +170,33 @@ void* gopro_discovery_create(int64_t events_port, uint16_t vid) {
       post(raw->events_port, gp::EventKind::kLeft, &rec);
     }
   });
-  if (!ok) return nullptr;
+  if (!ok)
+    return nullptr;
 
   ctx->worker = std::thread(worker_loop, raw);
   return ctx.release();
 }
 
 void gopro_discovery_destroy(void* handle) {
-  if (handle == nullptr) return;
+  if (handle == nullptr)
+    return;
   auto* ctx = static_cast<BridgeContext*>(handle);
   ctx->stop.store(true, std::memory_order_relaxed);
-  if (ctx->worker.joinable()) ctx->worker.join();
+  if (ctx->worker.joinable())
+    ctx->worker.join();
   delete ctx;
 }
 
 void gopro_discovery_rescan(void* handle) {
-  if (handle == nullptr) return;
+  if (handle == nullptr)
+    return;
   static_cast<BridgeContext*>(handle)->rescan.store(true,
                                                     std::memory_order_relaxed);
 }
 
 void gopro_discovery_set_timeout(void* handle, int32_t timeout_ms) {
-  if (handle == nullptr) return;
+  if (handle == nullptr)
+    return;
   static_cast<BridgeContext*>(handle)->timeout_ms.store(
       timeout_ms, std::memory_order_relaxed);
 }

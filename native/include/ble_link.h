@@ -73,9 +73,9 @@ enum class LinkAction : uint8_t {
   kScan,               ///< no candidate; scan for an LE advertisement
   kDisconnectClassic,  ///< a Classic link is blocking LE advertising
   kConnect,
-  kWaitForServices,    ///< connected; attributes have not appeared yet
-  kPair,               ///< resolved but unencrypted; needs an LE bond
-  kSubscribe,          ///< encrypted; subscribe remaining characteristics
+  kWaitForServices,  ///< connected; attributes have not appeared yet
+  kPair,             ///< resolved but unencrypted; needs an LE bond
+  kSubscribe,        ///< encrypted; subscribe remaining characteristics
 };
 
 [[nodiscard]] std::string_view to_string(LinkAction a);
@@ -84,12 +84,12 @@ enum class LinkAction : uint8_t {
 /// completely: "put the camera in pairing mode" versus "the camera is asleep".
 enum class StallReason : uint8_t {
   kNone,
-  kNoAdvertisement,     ///< nothing advertising -- camera asleep or off
-  kClassicBlocking,     ///< Classic link up and LE not advertising
-  kConnectFailed,       ///< connect attempts keep aborting
+  kNoAdvertisement,        ///< nothing advertising -- camera asleep or off
+  kClassicBlocking,        ///< Classic link up and LE not advertising
+  kConnectFailed,          ///< connect attempts keep aborting
   kServicesNeverAppeared,  ///< connected, but no attributes were exposed
-  kWrongDevice,         ///< attributes present but Control & Query missing
-  kNotEncrypted,        ///< StartNotify refused; an LE bond is required
+  kWrongDevice,            ///< attributes present but Control & Query missing
+  kNotEncrypted,           ///< StartNotify refused; an LE bond is required
   kSubscribeFailed,
 };
 

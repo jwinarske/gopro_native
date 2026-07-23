@@ -60,7 +60,7 @@ enum class Priority : uint8_t {
 enum class Outcome : uint8_t {
   kResponded,  ///< a matching response arrived
   kTimedOut,   ///< no response within the write timeout
-  kCanceled,  ///< cancel_all(), e.g. on disconnect
+  kCanceled,   ///< cancel_all(), e.g. on disconnect
   kRejected,   ///< refused at submit time; never transmitted
 };
 
@@ -98,8 +98,11 @@ class CommandQueue {
   /// Same-id rejection is not fussiness. Responses carry no sequence number,
   /// so two in-flight commands sharing an id cannot be told apart and the
   /// first response to arrive would resolve the wrong request.
-  bool submit(CorrelationId id, std::vector<uint8_t> payload, Priority priority,
-              CompletionFn done, uint64_t now_ms);
+  bool submit(CorrelationId id,
+              std::vector<uint8_t> payload,
+              Priority priority,
+              CompletionFn done,
+              uint64_t now_ms);
 
   /// Reports the camera's readiness, derived from the busy and encoding
   /// statuses. Releases queued work when it becomes true.
@@ -108,7 +111,8 @@ class CommandQueue {
   /// Routes an incoming response. Returns false if nothing was waiting on
   /// this id, in which case the caller should treat it as an asynchronous
   /// push notification rather than a reply.
-  bool on_response(CorrelationId id, std::span<const uint8_t> data,
+  bool on_response(CorrelationId id,
+                   std::span<const uint8_t> data,
                    uint64_t now_ms);
 
   /// Drives timeouts and releases newly-eligible work. Call periodically.

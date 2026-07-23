@@ -44,8 +44,10 @@ LinkObservation good() {
 void test_happy_path() {
   std::printf("happy path\n");
   LinkMachine m;
-  check(m.update(good(), 0).state == LinkState::kReady, "fully-up camera is ready");
-  check(m.update(good(), 0).action == LinkAction::kNone, "ready needs no action");
+  check(m.update(good(), 0).state == LinkState::kReady,
+        "fully-up camera is ready");
+  check(m.update(good(), 0).action == LinkAction::kNone,
+        "ready needs no action");
 }
 
 void test_absent_and_asleep() {
@@ -60,7 +62,8 @@ void test_absent_and_asleep() {
 
   // After the timeout with still nothing, name it: the camera is asleep.
   a = m.update(o, 10000);
-  check(a.stall == StallReason::kNoAdvertisement, "prolonged silence -> asleep");
+  check(a.stall == StallReason::kNoAdvertisement,
+        "prolonged silence -> asleep");
   check(!a.detail.empty(), "stall carries an explanation");
 }
 
@@ -68,7 +71,7 @@ void test_classic_blocks_le() {
   std::printf("classic blocking LE (observed)\n");
   LinkMachine m;
   LinkObservation o;
-  o.classic_link_up = true;      // BR-EDR bond auto-reconnected
+  o.classic_link_up = true;        // BR-EDR bond auto-reconnected
   o.le_candidate_present = false;  // ...and LE advertising stopped
 
   const auto a = m.update(o, 0);
@@ -95,7 +98,8 @@ void test_services_property_lies() {
   check(a.action == LinkAction::kWaitForServices, "wait for attributes");
 
   a = m.update(o, 15000);
-  check(a.stall == StallReason::kServicesNeverAppeared, "stall named after timeout");
+  check(a.stall == StallReason::kServicesNeverAppeared,
+        "stall named after timeout");
   check(a.detail.find("ServicesResolved") != std::string_view::npos,
         "warns that the property is unreliable");
 }
@@ -106,7 +110,7 @@ void test_wrong_transport() {
   LinkObservation o;
   o.le_candidate_present = true;
   o.connected = true;
-  o.attribute_count = 12;        // a GATT DB exists...
+  o.attribute_count = 12;         // a GATT DB exists...
   o.control_chars_found = false;  // ...but no Control & Query
 
   // Enter the state first; the timeout is measured from arrival, so a single
@@ -114,7 +118,8 @@ void test_wrong_transport() {
   (void)m.update(o, 0);
   const auto a = m.update(o, 15000);
   check(a.state == LinkState::kConnected, "not resolved without control chars");
-  check(a.stall == StallReason::kWrongDevice, "diagnosed as wrong device object");
+  check(a.stall == StallReason::kWrongDevice,
+        "diagnosed as wrong device object");
   check(a.detail.find("address type") != std::string_view::npos,
         "points at the address type");
 }
@@ -149,7 +154,8 @@ void test_bonded_flag_does_not_imply_encrypted() {
         "Bonded flag must not advance the state");
 
   a = m.update(o, 60000);
-  check(a.stall == StallReason::kNotEncrypted, "still diagnosed as unencrypted");
+  check(a.stall == StallReason::kNotEncrypted,
+        "still diagnosed as unencrypted");
   // The whole point: call out the misleading flag explicitly, because
   // "Bonded: yes" is exactly what sends someone down the wrong path.
   check(a.detail.find("BR-EDR bond does not") != std::string_view::npos,
@@ -171,7 +177,8 @@ void test_partial_subscription() {
   check(a.stall == StallReason::kSubscribeFailed, "stall after timeout");
 
   o.subscribed_count = 4;
-  check(m.update(o, 11000).state == LinkState::kReady, "ready once all subscribed");
+  check(m.update(o, 11000).state == LinkState::kReady,
+        "ready once all subscribed");
 }
 
 void test_backoff() {
